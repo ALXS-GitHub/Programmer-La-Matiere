@@ -1,0 +1,21 @@
+<!-- config.xml -->
+<?xml version="1.0" standalone="no" ?>
+<vs>
+	<visuals>
+		<window size="1280x720" backgroundColor="#4d4dd0" />
+		<render shadows="on" grid="on"/>
+	</visuals>
+	<world gridSize="20,20,20">
+		<blockList color="128,128,128">
+			<block position="1,1,0"/>
+			<block position="2,1,0" leader="true" color="255,255,0"/>
+			<block position="3,1,0"/>
+			<block position="4,1,0"/>
+			<block position="2,2,0"/>
+			<block position="4,2,0"/>
+			<block position="2,3,0"/>
+			<block position="3,3,0"/>
+			<block position="4,3,0"/>
+		</blockList>
+	</world>
+</vs>

@@ -16,3 +16,5 @@ Pour tester si tout fonctionne bien :
 cd ./VisibleSim/applicationsBin/e1_flooding
 ./e1_flooding
 ```
+
+et puis pour commit je vous conseille de sortir du container et de commit depuis votre vrai machine pour pas setup de ssh dans le container. (Peut être que le commit de vscode fonctionne, mais je n'ai pas testé.)

@@ -1,4 +1,5 @@
 #include <iostream>
+#include <cmath>
 
 #include "neural_network.hpp"
 
@@ -13,7 +14,7 @@ double NeuralNetwork::relu(double x) {
 }
 
 double NeuralNetwork::tanh(double x) {
-    return tanh(x);
+    return std::tanh(x); // std:: to avoid ambiguity between cmath and the NeuralNetwork class
 }
 
 /**

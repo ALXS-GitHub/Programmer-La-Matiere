@@ -1,5 +1,6 @@
 import socket
 import numpy as np
+import time
 
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -21,7 +22,7 @@ while True:
         print(data)
         
         connection.sendall(str(data.shape).encode())
-        
+        time.sleep(0.1)
         connection.sendall(data.tobytes())
 
     finally:

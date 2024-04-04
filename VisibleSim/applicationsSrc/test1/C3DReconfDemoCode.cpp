@@ -55,16 +55,12 @@ void C3DReconfDemoCode::startup()
     if (isLeader)
     {
         module->setColor(RED);
-        distance = 0;
         // nbWaitedAnswers = sendMessageToAllNeighbors("distance", new MessageOf<int>(BROADCAST_MSG_ID, distance + 1), 1000, 100, 0);
 
         // move forward
+        // ! be careful to use the onMotionEnd function to check if the motion is ended
+
         moveToFirst();
-        cout << "Current Position: " << module->position << endl;
-        // moveToFirst();
-        // cout << "Current Position: " << module->position << endl;
-        // moveToFirst();
-        // cout << "Current Position: " << module->position << endl;
     }
 }
 void C3DReconfDemoCode::myGoFunc(std::shared_ptr<Message> _msg, P2PNetworkInterface *sender)
@@ -120,7 +116,22 @@ void C3DReconfDemoCode::parseUserBlockElements(TiXmlElement *config)
 
 void C3DReconfDemoCode::onTap(int face)
 {
+    // use onTap by ctrl + right click and then select "Tap"
     std::cout << "Block 'tapped':" << getId() << std::endl; // complete with your code here
+    moveToFirst();
+    std::cout << "Current Position: " << module->position << std::endl;
+
+}
+
+void C3DReconfDemoCode::onMotionEnd()
+{
+    // use onMotionEnd by ctrl + right click and then select "MotionEnd"
+    std::cout << "Motion ended" << std::endl; // complete with your code here
+    isMoving = false;
+    numberOfMoves--;
+    if (numberOfMoves > 0) {
+        moveToFirst();
+    }
 }
 
 int C3DReconfDemoCode::findNeighborPort(const Catoms3DBlock *neighbor) {
@@ -150,6 +161,7 @@ void C3DReconfDemoCode::moveStupid() {
 
 void C3DReconfDemoCode::moveToFirst() {
     // move to the first possible rotation
+    isMoving = true;
     vector<std::pair<const Catoms3DMotionRulesLink*, Catoms3DRotation>> motions =
           Catoms3DMotionEngine::getAllRotationsForModule(module);
     auto motion=motions.begin();

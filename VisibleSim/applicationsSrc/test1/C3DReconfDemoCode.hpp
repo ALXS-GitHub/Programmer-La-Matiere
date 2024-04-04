@@ -32,6 +32,8 @@ private:
     // int currentRound=0;
     int nbWaitedAnswers = 0;
     P2PNetworkInterface *parent = nullptr;
+    bool isMoving = false;
+    int numberOfMoves = 10;
 
 public:
     C3DReconfDemoCode(Catoms3DBlock *host);
@@ -92,6 +94,8 @@ public:
       * @param face face that has been tapped
       */
     void onTap(int face) override;
+
+    void onMotionEnd() override;
 
     int findNeighborPort(const Catoms3DBlock *neighbor);
 

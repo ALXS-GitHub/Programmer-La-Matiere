@@ -37,7 +37,8 @@ private:
     bool isMoving = false;
     int moveTo = 0;
     int numberOfMoves = 12;
-    NeuralNetwork nn = NeuralNetwork(4, 1, 4, 4);
+    NeuralNetwork nn = NeuralNetwork(4, 1, 4, 4); // for movements 0, 2, 4, 6
+    vector<double> previousMoves = {1, 0, 0, 0};
     
 
 
@@ -112,6 +113,8 @@ public:
     void moveToFirst();
 
     void moveToN(int n);
+
+    void onInterruptionEvent(shared_ptr<Event> event) override;
 
     /*****************************************************************************/
     /** needed to associate code to module                                      **/

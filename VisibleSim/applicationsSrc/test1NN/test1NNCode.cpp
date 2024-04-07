@@ -48,7 +48,8 @@ test1NNCode::test1NNCode(Catoms3DBlock *host) : Catoms3DBlockCode(host), module(
                                    std::placeholders::_1, std::placeholders::_2));
 
     // ? set the weights of the neural network
-    vector<vector<vector<double>>> weights = {{{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}, {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}};
+    vector<vector<vector<double>>> weights = {{{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}, {{0, 0, 0, 1}, {1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}}}; // 0 -> 2, 2 -> 4, 4 -> 6, 6 -> 0
+    nn.setActivationFunction("relu");
     nn.setWeights(weights);
 }
 
@@ -85,7 +86,7 @@ void test1NNCode::startup()
         }
 
         // moveToFirst();
-        moveToN(moveTo);
+        moveToN(0);
     }
 }
 void test1NNCode::myGoFunc(std::shared_ptr<Message> _msg, P2PNetworkInterface *sender)
@@ -155,8 +156,9 @@ void test1NNCode::onMotionEnd()
     std::cout << "Motion ended" << std::endl; // complete with your code here
     isMoving = false;
     numberOfMoves--;
-    if (numberOfMoves > 0) {
-        moveToN(moveTo);
+    if (numberOfMoves > 0) { // do not move if we have reached the limit of moves
+        // wait one second before moving again
+        scheduler->schedule(new InterruptionEvent<int>(scheduler->now() + 1000000, module, 1)); // time is in microseconds
     }
 }
 
@@ -231,4 +233,29 @@ void test1NNCode::moveToN(int n) {
             return;
         }
     }
+}
+
+int getMaxIndex(vector<double> output) {
+    int index = 0;
+    double max = output[0];
+    for (int i = 1; i < output.size(); i++) {
+        if (output[i] > max) {
+            max = output[i];
+            index = i;
+        }
+    }
+    return index;
+}
+
+void test1NNCode::onInterruptionEvent(shared_ptr<Event> event) {
+    std::cout << "Interruption Ended" << std::endl; // complete with your code here
+    vector<double> output = nn.feedForward(previousMoves);
+    console << "Output : " << output[0] << ", " << output[1] << ", " << output[2] << ", " << output[3] << "\n";
+
+    // get the index of the maximum value
+    int index = getMaxIndex(output);
+    moveTo = index*2; // to get the 0, 2, 4, 6
+    previousMoves = {0, 0, 0, 0};
+    previousMoves[index] = 1;
+    moveToN(moveTo);
 }

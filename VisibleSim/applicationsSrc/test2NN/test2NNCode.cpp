@@ -73,6 +73,8 @@ void test2NNCode::startup()
         auto motion=motions.begin();
         bool found=false;
 
+        Cell3DPosition position = module->position;
+        console << "module position : " << position << "\n";
 
         while (motion!=motions.end() && !found) {
             console << motion->second.pivot << "\n";
@@ -80,14 +82,17 @@ void test2NNCode::startup()
             console << "pivotPort : " << pivotPort << "\n";
             console << "can move to pivotPort : " << canMove(pivotPort) << "\n";
             Cell3DPosition finalPos;
+
             short finalOrient;  
             (*motion).second.getFinalPositionAndOrientation(finalPos, finalOrient);
+            Cell3DPosition d = finalPos - position;
             console << "finalPos : " << finalPos << "\n";
             console << "finalOrient : " << finalOrient << "\n";
             // elem.first->isOctaFace(), elem.first->getConFromID(),elem.first->getConToID(),
             console << "isOctaFace : " << (*motion).first->isOctaFace() << "\n";
-            console << "getConFromID : " << (*motion).first->getConFromID() << "\n";
+            console << "getConFromID : " << (*motion).first->getConFromID() << "\n"; // same as pivotPort
             console << "getConToID : " << (*motion).first->getConToID() << "\n";
+            console << "(dx, dy, dz) : " << d << "\n";
 
             if (pivotPort!=-1 && canMove(pivotPort)) {
                 // scheduler->schedule(new Catoms3DRotationStartEvent(scheduler->now() + 1000, module, (*motion).second));
@@ -169,7 +174,7 @@ void test2NNCode::onMotionEnd()
     numberOfMoves--;
     if (numberOfMoves > 0) { // do not move if we have reached the limit of moves
         // wait one second before moving again
-        scheduler->schedule(new InterruptionEvent<int>(scheduler->now() + 1000000, module, 1)); // time is in microseconds
+        scheduler->schedule(new InterruptionEvent<int>(scheduler->now() + 1000, module, 1)); // time is in microseconds
     }
 }
 
@@ -269,4 +274,26 @@ void test2NNCode::onInterruptionEvent(shared_ptr<Event> event) {
     previousMoves = {0, 0, 0, 0};
     previousMoves[index] = 1;
     moveToN(moveTo);
+}
+
+void test2NNCode::onEndOfSimulation() {
+    // !! the onEndOfSimulation function is called at the end of the simulation for only ONE module !!
+    console << "End of simulation" << "\n";
+    cout << "End of simulation" << endl;
+    
+    // ? so we need to get all the modules from the world
+    map<bID, BaseSimulator::BuildingBlock *> modules = BaseSimulator::getWorld()->getMap();
+    // get all leaders
+    for (auto &elem : modules) { // ? iterate over all modules
+        test2NNCode *blockCode = dynamic_cast<test2NNCode *>(elem.second->blockCode); // ? typecast the blockcode to test2NNCode to access the isLeader variable (and specific module data)
+        if (blockCode->isLeader) { // ? check if the module is a leader
+            console << "Leader Id : " << elem.first << "\n";
+            cout << "Leader Id : " << elem.first << endl;
+            blockCode->module->setColor(WHITE);
+            console << "Final position : " << blockCode->module->position << "\n"; // ? print the final position of the leader
+            cout << "Final position : " << blockCode->module->position << endl;
+            console << "Module Id" << elem.first << "\n";
+            cout << "Module Id" << elem.first << endl;
+        }
+    }
 }

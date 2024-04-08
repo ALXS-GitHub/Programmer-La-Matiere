@@ -29,7 +29,6 @@ class test2NNCode : public Catoms3DBlockCode
 {
 private:
     Catoms3DBlock *module = nullptr;
-    bool isLeader = false;
     int distance = 0;
     // int currentRound=0;
     int nbWaitedAnswers = 0;
@@ -43,6 +42,7 @@ private:
 
 
 public:
+    bool isLeader = false;
     test2NNCode(Catoms3DBlock *host);
     ~test2NNCode(){};
 
@@ -115,6 +115,8 @@ public:
     void moveToN(int n);
 
     void onInterruptionEvent(shared_ptr<Event> event) override;
+
+    void onEndOfSimulation() override;
 
     /*****************************************************************************/
     /** needed to associate code to module                                      **/

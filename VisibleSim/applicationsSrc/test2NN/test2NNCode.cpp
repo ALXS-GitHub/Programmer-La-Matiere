@@ -50,6 +50,7 @@ test2NNCode::test2NNCode(Catoms3DBlock *host) : Catoms3DBlockCode(host), module(
     // ? set the weights of the neural network
     vector<vector<vector<double>>> weights = {{{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}, {{0, 0, 0, 1}, {1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}}}; // 0 -> 2, 2 -> 4, 4 -> 6, 6 -> 0
     nn.setActivationFunction("relu");
+    nn.setActivationFunctionOutput("relu");
     nn.setWeights(weights);
 }
 

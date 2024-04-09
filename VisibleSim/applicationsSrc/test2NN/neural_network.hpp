@@ -20,6 +20,7 @@ class NeuralNetwork {
         vector<double> inputs;
         vector<double> outputs;
         function<double(double)> activationFunction;
+        function<double(double)> activationFunctionOutput;
         
         double sigmoid(double x);
         double relu(double x);
@@ -29,6 +30,7 @@ class NeuralNetwork {
             NeuralNetwork(int numInputs, int numHiddenLayers, int numNeuronsPerHiddenLayer, int numOutputs);
             void setWeights(vector<vector<vector<double>>> weights);
             void setActivationFunction(string activationFunction); // either "sigmoid", "relu" or "tanh" else default to sigmoid
+            void setActivationFunctionOutput(string activationFunction); // either "sigmoid", "relu" or "tanh" else default to sigmoid
             vector<double> feedForward(vector<double> inputs); // feed forward the inputs through the network
 
 };

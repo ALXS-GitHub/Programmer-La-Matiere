@@ -31,6 +31,7 @@ NeuralNetwork::NeuralNetwork(int numInputs, int numHiddenLayers, int numNeuronsP
     this->numNeuronsPerHiddenLayer = numNeuronsPerHiddenLayer;
     this->numOutputs = numOutputs;
     this->activationFunction = bind(&NeuralNetwork::sigmoid, this, placeholders::_1); // default activation function is sigmoid
+    this->activationFunctionOutput = bind(&NeuralNetwork::sigmoid, this, placeholders::_1); // default activation function is sigmoid
 }
 
 /**
@@ -58,6 +59,24 @@ void NeuralNetwork::setActivationFunction(string activationFunction) {
     } else {
         cout << "Invalid activation function, defaulting to sigmoid" << endl;
         this->activationFunction = bind(&NeuralNetwork::sigmoid, this, placeholders::_1);
+    }
+}
+
+/**
+ * @brief Set the Activation Function Output object
+ * 
+ * @param activationFunction the activation function to use
+*/
+void NeuralNetwork::setActivationFunctionOutput(string activationFunction) {
+    if (activationFunction == "sigmoid") {
+        this->activationFunctionOutput = bind(&NeuralNetwork::sigmoid, this, placeholders::_1);
+    } else if (activationFunction == "relu") {
+        this->activationFunctionOutput = bind(&NeuralNetwork::relu, this, placeholders::_1);
+    } else if (activationFunction == "tanh") {
+        this->activationFunctionOutput = bind(&NeuralNetwork::tanh, this, placeholders::_1);
+    } else {
+        cout << "Invalid activation function, defaulting to sigmoid" << endl;
+        this->activationFunctionOutput = bind(&NeuralNetwork::sigmoid, this, placeholders::_1);
     }
 }
 
@@ -97,7 +116,7 @@ vector<double> NeuralNetwork::feedForward(vector<double> inputs) {
         for (int j = 0; j < currentNumInputs; j++) { // sum of the products of the inputs and the weights
             sum += inputs[j] * weights[numHiddenLayers][i][j];
         }
-        outputs[i] = this->activationFunction(sum); // $ activation function
+        outputs[i] = this->activationFunctionOutput(sum); // $ activation function
     }
 
     return this->outputs;

@@ -22,16 +22,18 @@ double NeuralNetwork::tanh(double x) {
  * 
  * @param numInputs the number of inputs
  * @param numHiddenLayers the number of hidden layers
- * @param numNeuronsPerHiddenLayer the number of neurons per hidden layer
+ * @param numNeuronsPerHiddenLayer the number of neurons per hidden layer (do not take into account the bias)
  * @param numOutputs the number of outputs
+ * @param useBias [defaults to false] whether to use a bias or not (by convention the bias is always the last element of the weights vectors)
 */
-NeuralNetwork::NeuralNetwork(int numInputs, int numHiddenLayers, int numNeuronsPerHiddenLayer, int numOutputs) {
+NeuralNetwork::NeuralNetwork(int numInputs, int numHiddenLayers, int numNeuronsPerHiddenLayer, int numOutputs, bool useBias) {
     this->numInputs = numInputs;
     this->numHiddenLayers = numHiddenLayers;
     this->numNeuronsPerHiddenLayer = numNeuronsPerHiddenLayer;
     this->numOutputs = numOutputs;
     this->activationFunction = bind(&NeuralNetwork::sigmoid, this, placeholders::_1); // default activation function is sigmoid
     this->activationFunctionOutput = bind(&NeuralNetwork::sigmoid, this, placeholders::_1); // default activation function is sigmoid
+    this->useBias = useBias; // by convention the bias is always the last element of the weights vectors
 }
 
 /**
@@ -40,6 +42,23 @@ NeuralNetwork::NeuralNetwork(int numInputs, int numHiddenLayers, int numNeuronsP
  * @param weights the weights of the neural network
 */
 void NeuralNetwork::setWeights(vector<vector<vector<double>>> weights) {
+
+    // ! error handling, check if weights are of the right size
+    if (weights.size() != static_cast<size_t>(numHiddenLayers + 1)) {
+        throw runtime_error("\033[1;31m[WEIGHTS]\033[0m Invalid number of weight layers, expected " + to_string(numHiddenLayers + 1) + " got " + to_string(weights.size()));
+    }
+
+    for (int i = 0; i < numHiddenLayers + 1; i++) {
+        if (weights[i].size() != static_cast<size_t>((i == numHiddenLayers ? numOutputs : numNeuronsPerHiddenLayer))) {
+            throw runtime_error("\033[1;31m[WEIGHTS]\033[0m Invalid number of neurons in hidden layer " + to_string(i) + " expected " + to_string(i == numHiddenLayers ? numOutputs : numNeuronsPerHiddenLayer) + " got " + to_string(weights[i].size()));
+        }
+        for (int j = 0; j < (i == numHiddenLayers ? numOutputs : numNeuronsPerHiddenLayer); j++) {
+            if (weights[i][j].size() != static_cast<size_t>((i == 0 ? numInputs : numNeuronsPerHiddenLayer) + (useBias ? 1 : 0))) {
+                throw runtime_error("\033[1;31m[WEIGHTS]\033[0m Invalid number of inputs in hidden layer " + to_string(i) + " neuron " + to_string(j) + " expected " + to_string((i == 0 ? numInputs : numNeuronsPerHiddenLayer) + (useBias ? 1 : 0)) + " got " + to_string(weights[i][j].size()));
+            }
+        }
+    }
+
     this->weights = weights;
 }
 
@@ -104,6 +123,11 @@ vector<double> NeuralNetwork::feedForward(vector<double> inputs) {
             for (int k = 0; k < currentNumInputs; k++) { // sum of the products of the inputs and the weights
                 sum += inputs[k] * weights[i][j][k]; 
             }
+
+            if (useBias) { // adding the bias
+                sum += weights[i][j][currentNumInputs];
+            }
+
             newInputs[j] = this->activationFunction(sum); // $ activation function
         }
         inputs = newInputs;
@@ -116,6 +140,11 @@ vector<double> NeuralNetwork::feedForward(vector<double> inputs) {
         for (int j = 0; j < currentNumInputs; j++) { // sum of the products of the inputs and the weights
             sum += inputs[j] * weights[numHiddenLayers][i][j];
         }
+
+        if (useBias) { // adding the bias
+            sum += weights[numHiddenLayers][i][currentNumInputs];
+        }
+
         outputs[i] = this->activationFunctionOutput(sum); // $ activation function
     }
 

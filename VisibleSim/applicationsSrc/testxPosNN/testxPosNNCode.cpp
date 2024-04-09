@@ -48,7 +48,7 @@ testxPosNNCode::testxPosNNCode(Catoms3DBlock *host) : Catoms3DBlockCode(host), m
                                    std::placeholders::_1, std::placeholders::_2));
 
     // ? set the weights of the neural network
-    vector<vector<vector<double>>> weights = {{{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}, {{0, 0, 0, 1}, {1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}}}; // 0 -> 2, 2 -> 4, 4 -> 6, 6 -> 0
+    vector<vector<vector<double>>> weights = {{{-1,10.5},{-1,0},{1,-10.5},{-1,0},{0.0501,0}}}; // x+bias -> motion (0,2,4,6,no move)
     nn.setActivationFunction("relu");
     nn.setActivationFunctionOutput("relu");
     nn.setWeights(weights);
@@ -175,7 +175,7 @@ void testxPosNNCode::onMotionEnd()
     numberOfMoves--;
     if (numberOfMoves > 0) { // do not move if we have reached the limit of moves
         // wait one second before moving again
-        scheduler->schedule(new InterruptionEvent<int>(scheduler->now() + 1000, module, 1)); // time is in microseconds
+        scheduler->schedule(new InterruptionEvent<int>(scheduler->now() + 1000000, module, 1)); // time is in microseconds
     }
 }
 
@@ -265,16 +265,34 @@ int getMaxIndex(vector<double> output) {
 }
 
 void testxPosNNCode::onInterruptionEvent(shared_ptr<Event> event) {
-    std::cout << "Interruption Ended" << std::endl; // complete with your code here
-    vector<double> output = nn.feedForward(previousMoves);
-    console << "Output : " << output[0] << ", " << output[1] << ", " << output[2] << ", " << output[3] << "\n";
 
-    // get the index of the maximum value
+    auto data = dynamic_cast<InterruptionEvent<int> *>(event.get())->data;
+    // cout << "data is " << data << endl;
+
+    std::cout << "Interruption Ended" << std::endl; // complete with your code here
+    // vector<double> output = nn.feedForward(previousMoves);
+    // console << "Output : " << output[0] << ", " << output[1] << ", " << output[2] << ", " << output[3] << "\n";
+
+    // // get the index of the maximum value
+    // int index = getMaxIndex(output);
+    // moveTo = index*2; // to get the 0, 2, 4, 6
+    // previousMoves = {0, 0, 0, 0};
+    // previousMoves[index] = 1;
+    // moveToN(moveTo);
+    Cell3DPosition position = module->position;
+    double px = position[0];
+    vector<double> output = nn.feedForward({px});
+    console << "Output : " << output[0] << ", " << output[1] << ", " << output[2] << ", " << output[3] << ", " << output[4] << "\n";
+
     int index = getMaxIndex(output);
-    moveTo = index*2; // to get the 0, 2, 4, 6
-    previousMoves = {0, 0, 0, 0};
-    previousMoves[index] = 1;
-    moveToN(moveTo);
+    moveTo = index*2;
+
+    if (index == 4) {
+        this->onMotionEnd(); // to simulate the end of the motion (even if we don't move)
+    } else {
+        moveToN(moveTo);
+    }
+    
 }
 
 void testxPosNNCode::onEndOfSimulation() {

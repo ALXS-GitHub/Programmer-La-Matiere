@@ -16,7 +16,6 @@ class NeuralNetwork {
         int numHiddenLayers;
         int numNeuronsPerHiddenLayer;
         int numOutputs;
-        bool useBias; // by convention the bias is always the last element of the weights vectors
         vector<vector<vector<double>>> weights;
         vector<double> inputs;
         vector<double> outputs;
@@ -28,7 +27,7 @@ class NeuralNetwork {
         double tanh(double x);
         
         public:
-            NeuralNetwork(int numInputs, int numHiddenLayers, int numNeuronsPerHiddenLayer, int numOutputs, bool useBias = false);
+            NeuralNetwork(int numInputs, int numHiddenLayers, int numNeuronsPerHiddenLayer, int numOutputs);
             void setWeights(vector<vector<vector<double>>> weights);
             void setActivationFunction(string activationFunction); // either "sigmoid", "relu" or "tanh" else default to sigmoid
             void setActivationFunctionOutput(string activationFunction); // either "sigmoid", "relu" or "tanh" else default to sigmoid

@@ -1,5 +1,5 @@
 CC = g++
-CFLAGS = -std=c++11 -Wall -Wextra -Werror -pedantic -O3
+CFLAGS = -std=c++11 -Wall -Wextra -pedantic -O3
 
 # usage example : make neural_network
 # we suppose that the files exists : test/neural_network_test.cpp src/neural_network.cpp src/neural_network.hpp

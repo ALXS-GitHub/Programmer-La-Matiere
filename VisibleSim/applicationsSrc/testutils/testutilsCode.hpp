@@ -18,6 +18,8 @@
 #include "robots/catoms3D/catoms3DRotationEvents.h"
 #include <vector>
 #include <map>
+#include <set>
+#include <unordered_set>
 static const int GO_MSG_ID = 1001;
 static const int BACK_MSG_ID = 1002;
 static const int WAKEUP_MSG_ID = 1003;
@@ -25,6 +27,33 @@ static const int ACKNOWLEDGE_MSG_ID = 1004;
 static const int BROADCAST_MSG_ID = 1005;
 
 using namespace Catoms3D;
+
+// & Utils class
+// !!!!!!!!! This should be in the simulator, but for easier access, we put it here !!!!!!!!!
+
+class Utils
+{
+    public:
+        struct CoordinatesHash {
+            size_t operator()(const std::vector<int>& v) const {
+                std::hash<int> hasher;
+                size_t seed = 0;
+                for (int i : v) {
+                    seed ^= hasher(i) + 0x9e3779b9 + (seed<<6) + (seed>>2);
+                }
+                return seed;
+            }
+        };
+        static unordered_set<vector<int>, CoordinatesHash> takenDestinations; // list of the destinations already taken (to avoid having two modules going to the same destination)
+        static void addTakenDestination(vector<int> destination);
+        static void removeTakenDestination(vector<int> destination);
+        static bool isDestinationTaken(vector<int> destination);
+        static void printTakenDestinations(); // Especially for debugging
+
+};
+// !*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!
+
+// & Robot class
 
 class testutilsCode : public Catoms3DBlockCode
 {
@@ -108,8 +137,6 @@ public:
 
     int findNeighborPort(const Catoms3DBlock *neighbor);
 
-    bool canMove(int port);
-
     void moveStupid();
 
     void moveToFirst();
@@ -127,6 +154,8 @@ public:
     int getBestMoveIndex(vector<double> output);
 
     void moveFromOutput(int index);
+
+    map<bID, BaseSimulator::BuildingBlock *> getLeaders();
 
     vector<vector<int>> getEndOfSimulationPositions();
 

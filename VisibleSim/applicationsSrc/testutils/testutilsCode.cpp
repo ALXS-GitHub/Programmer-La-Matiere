@@ -13,6 +13,38 @@
 #include "robots/catoms3D/catoms3DRotationEvents.h"
 #include <thread>
 #include <chrono>
+#include <set>
+#include <unordered_set>
+
+// & Utils
+
+unordered_set<vector<int>, Utils::CoordinatesHash> Utils::takenDestinations;
+
+void Utils::addTakenDestination(vector<int> destination) {
+    takenDestinations.insert(destination);
+}
+
+void Utils::removeTakenDestination(vector<int> destination) {
+    takenDestinations.erase(destination);
+}
+
+bool Utils::isDestinationTaken(vector<int> destination) {
+    return takenDestinations.find(destination) != takenDestinations.end();
+}
+
+void Utils::printTakenDestinations() {
+
+    if (takenDestinations.empty()) {
+        cout << "No taken destinations" << endl;
+        return;
+    }
+
+    for (auto &dest : takenDestinations) {
+        cout << "Destination : " << dest[0] << ", " << dest[1] << ", " << dest[2] << endl;
+    }
+}
+
+// & Robot Code
 
 testutilsCode::testutilsCode(Catoms3DBlock *host) : Catoms3DBlockCode(host), module(host)
 {
@@ -81,7 +113,6 @@ void testutilsCode::startup()
             console << motion->second.pivot << "\n";
             int pivotPort = findNeighborPort((*motion).second.pivot);
             console << "pivotPort : " << pivotPort << "\n";
-            console << "can move to pivotPort : " << canMove(pivotPort) << "\n";
             Cell3DPosition finalPos;
 
             short finalOrient;  
@@ -94,11 +125,6 @@ void testutilsCode::startup()
             console << "getConFromID : " << (*motion).first->getConFromID() << "\n"; // same as pivotPort
             console << "getConToID : " << (*motion).first->getConToID() << "\n";
             console << "(dx, dy, dz) : " << d << "\n";
-
-            if (pivotPort!=-1 && canMove(pivotPort)) {
-                // scheduler->schedule(new Catoms3DRotationStartEvent(scheduler->now() + 1000, module, (*motion).second));
-                // found=true;
-            }
             motion++;
         }
 
@@ -169,6 +195,11 @@ void testutilsCode::onTap(int face)
 
 void testutilsCode::onMotionEnd()
 {
+
+    // clear the taken destination
+    vector<int> posVect = {module->position[0], module->position[1], module->position[2]};
+    Utils::removeTakenDestination(posVect); 
+
     // use onMotionEnd by ctrl + right click and then select "MotionEnd"
     moveTo++;
     // std::cout << "Motion ended" << std::endl; // complete with your code here
@@ -188,16 +219,6 @@ int testutilsCode::findNeighborPort(const Catoms3DBlock *neighbor) {
   return (i<FCCLattice::MAX_NB_NEIGHBORS?i:-1);
 }
 
-bool testutilsCode::canMove(int port) {
-    vector<std::pair<const Catoms3DMotionRulesLink*, Catoms3DRotation>> motions =
-            Catoms3DMotionEngine::getAllRotationsForModule(module);
-   for (auto &motion:motions) {
-       int pivotPort = findNeighborPort(motion.second.pivot);
-       if (pivotPort==port) return true;
-  }
-  return false;
-}
-
 void testutilsCode::moveStupid() {
     vector<std::pair<const Catoms3DMotionRulesLink*, Catoms3DRotation>> motions =
           Catoms3DMotionEngine::getAllRotationsForModule(module);
@@ -213,11 +234,8 @@ void testutilsCode::moveToFirst() {
     auto motion=motions.begin();
     bool found=false;
     while (motion!=motions.end() && !found) {
-        int pivotPort = findNeighborPort((*motion).second.pivot);
-        if (pivotPort!=-1 && canMove(pivotPort)) {
-            scheduler->schedule(new Catoms3DRotationStartEvent(scheduler->now() + 1000, module, (*motion).second));
-            found=true;
-        }
+        scheduler->schedule(new Catoms3DRotationStartEvent(scheduler->now() + 1000, module, (*motion).second));
+        found=true;
         motion++;
     }
 }
@@ -243,15 +261,8 @@ void testutilsCode::moveToN(int n) {
         motion++;
     }
     if (i==n) {
-        int pivotPort = findNeighborPort((*motion).second.pivot);
-        if (pivotPort!=-1 && canMove(pivotPort)) {
-            scheduler->schedule(new Catoms3DRotationStartEvent(scheduler->now() + 1000, module, (*motion).second));
-            found=true;
-        } else {
-            console << "Can't move to pivotPort : " << pivotPort << "\n";
-            cout << "Can't move to pivotPort : " << pivotPort << endl;
-            return;
-        }
+        scheduler->schedule(new Catoms3DRotationStartEvent(scheduler->now() + 1000, module, (*motion).second));
+        found=true;
     }
 }
 
@@ -270,6 +281,12 @@ int getMaxIndex(vector<double> output) {
 void testutilsCode::onInterruptionEvent(shared_ptr<Event> event) {
 
     auto data = dynamic_cast<InterruptionEvent<int> *>(event.get())->data;
+
+    if (data == 2) { // no move interruption (to simulate the same duration as a normal move)
+        this->onMotionEnd();
+        return;
+    }
+
     // cout << "data is " << data << endl;
 
     // std::cout << "Interruption Ended" << std::endl; // complete with your code here
@@ -361,6 +378,11 @@ int testutilsCode::getBestMoveIndex(vector<double> output) {
 
     for (int i = 0; i < output.size(); i++) {
         if (possibleMoves.find(NNMovesMapping[i]) != possibleMoves.end()) {
+
+            if (Utils::isDestinationTaken({module->position[0] + NNMovesMapping[i][0], module->position[1] + NNMovesMapping[i][1], module->position[2] + NNMovesMapping[i][2]})) {
+                continue;
+            }
+
             if (output[i] > max) {
                 max = output[i];
                 index = i;
@@ -372,6 +394,9 @@ int testutilsCode::getBestMoveIndex(vector<double> output) {
 
 void testutilsCode::moveFromOutput(int index) {
 
+    vector<int> destinationVector = {module->position[0] + NNMovesMapping[index][0], module->position[1] + NNMovesMapping[index][1], module->position[2] + NNMovesMapping[index][2]};
+    Utils::addTakenDestination(destinationVector); // ! important to keep track of the taken destinations, release this position when the motion is ended
+
     if (index == -1) {
         console << "No move found" << "\n";
         cout << "No move found" << endl;
@@ -381,10 +406,22 @@ void testutilsCode::moveFromOutput(int index) {
 
     vector<int> nullvect = {0,0,0};
     if (NNMovesMapping[index] == nullvect) {
-        this->onMotionEnd();
+        scheduler->schedule(new InterruptionEvent<int>(scheduler->now() + Catoms3DRotation::ANIMATION_DELAY, module, 2)); // get the normal move duration and send it as a data=2 interruption type
     } else {
         moveToN(possibleMoves[NNMovesMapping[index]]);
     }
+}
+
+map<bID, BaseSimulator::BuildingBlock *> testutilsCode::getLeaders() {
+    map<bID, BaseSimulator::BuildingBlock *> modules = BaseSimulator::getWorld()->getMap();
+    map<bID, BaseSimulator::BuildingBlock *> leaders;
+    for (auto &elem : modules) {
+        testutilsCode *blockCode = dynamic_cast<testutilsCode *>(elem.second->blockCode);
+        if (blockCode->isLeader) {
+            leaders[elem.first] = elem.second;
+        }
+    }
+    return leaders;
 }
 
 vector<vector<int>> testutilsCode::getEndOfSimulationPositions() {

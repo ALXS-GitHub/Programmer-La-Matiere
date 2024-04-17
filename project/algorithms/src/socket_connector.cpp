@@ -27,8 +27,8 @@ bool SocketClient::connectToServer() {
 
 void SocketClient::receiveData() {
     // Recevoir la forme de la matrice 3D
-    char buffer[4096];
-    recv(client_socket, buffer, 4096, 0);
+    char buffer[1024];
+    recv(client_socket, buffer, 1024, 0);
     string shape_str(buffer);
     cout << "Shape: " << shape_str << endl;
 

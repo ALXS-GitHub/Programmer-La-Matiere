@@ -1,0 +1,8 @@
+{
+    "name": "C++ (from Linux)",
+    "build": {
+        "dockerfile": "../Dockerfile",
+        "args": { "DISPLAY": "${localEnv:DISPLAY}" }
+    },
+    "runArgs": [ "-e", "DISPLAY=${localEnv:DISPLAY}", "-v", "/tmp/.X11-unix:/tmp/.X11-unix" ]
+}

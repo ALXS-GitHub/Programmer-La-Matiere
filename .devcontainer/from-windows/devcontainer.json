@@ -1,0 +1,6 @@
+{
+	"name": "C++ (from Windows)",
+	"build": {
+		"dockerfile": "../Dockerfile"
+	}
+}

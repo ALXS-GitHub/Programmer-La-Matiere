@@ -13,6 +13,21 @@
 #include "robots/catoms3D/catoms3DRotationEvents.h"
 #include <thread>
 #include <chrono>
+#include <cstdlib>
+#include <ctime>
+
+std::vector<std::vector<std::vector<double>>> generateRandomWeights(int dim1, int dim2, int dim3) {
+    srand(time(0)); // seed the random number generator
+    std::vector<std::vector<std::vector<double>>> weights(dim1, std::vector<std::vector<double>>(dim2, std::vector<double>(dim3)));
+    for (int i = 0; i < dim1; ++i) {
+        for (int j = 0; j < dim2; ++j) {
+            for (int k = 0; k < dim3; ++k) {
+                weights[i][j][k] = static_cast<double>(rand()) / RAND_MAX; // generate a random double between 0 and 1
+            }
+        }
+    }
+    return weights;
+}
 
 test1NNCode::test1NNCode(Catoms3DBlock *host) : Catoms3DBlockCode(host), module(host)
 {
@@ -48,7 +63,20 @@ test1NNCode::test1NNCode(Catoms3DBlock *host) : Catoms3DBlockCode(host), module(
                                    std::placeholders::_1, std::placeholders::_2));
 
     // ? set the weights of the neural network
-    vector<vector<vector<double>>> weights = {{{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}, {{0, 0, 0, 1}, {1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}}}; // 0 -> 2, 2 -> 4, 4 -> 6, 6 -> 0
+    // vector<vector<vector<double>>> weights = {{{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}, {{0, 0, 0, 1}, {1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}}}; // 0 -> 2, 2 -> 4, 4 -> 6, 6 -> 0
+    // generate random wieghts
+    vector<vector<vector<double>>> weights = generateRandomWeights(2, 4, 4);
+    // print the weights
+    for (int i = 0; i < weights.size(); i++) {
+        for (int j = 0; j < weights[i].size(); j++) {
+            for (int k = 0; k < weights[i][j].size(); k++) {
+                cout << weights[i][j][k] << " ";
+            }
+            cout << endl;
+        }
+        cout << endl;
+    }
+
     nn.setActivationFunction("relu");
     nn.setWeights(weights);
 }
@@ -86,7 +114,8 @@ void test1NNCode::startup()
         }
 
         // moveToFirst();
-        moveToN(0);
+        // moveToN(0);
+        onMotionEnd();
     }
 }
 void test1NNCode::myGoFunc(std::shared_ptr<Message> _msg, P2PNetworkInterface *sender)

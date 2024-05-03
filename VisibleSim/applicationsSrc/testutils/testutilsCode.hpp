@@ -33,6 +33,9 @@ using namespace Catoms3D;
 
 class Utils
 {
+    private:
+        static uint64_t motionsProcessed;
+
     public:
         struct CoordinatesHash {
             size_t operator()(const std::vector<int>& v) const {
@@ -49,6 +52,11 @@ class Utils
         static void removeTakenDestination(vector<int> destination);
         static bool isDestinationTaken(vector<int> destination);
         static void printTakenDestinations(); // Especially for debugging
+        static int getCubeDistance(vector<int> pos1, vector<int> pos2); // get the distance between two positions in the cube
+
+        // getters and setters
+        static uint64_t getMotionsProcessed();
+        static void incrementMotionsProcessed();
 
 };
 // !*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!
@@ -137,10 +145,6 @@ public:
 
     int findNeighborPort(const Catoms3DBlock *neighbor);
 
-    void moveStupid();
-
-    void moveToFirst();
-
     void moveToN(int n);
 
     void onInterruptionEvent(shared_ptr<Event> event) override;
@@ -158,6 +162,18 @@ public:
     map<bID, BaseSimulator::BuildingBlock *> getLeaders();
 
     vector<vector<int>> getEndOfSimulationPositions();
+
+    int getTotalNumberOfMoves();
+
+    /**
+     * @brief Get the robots around the current robot
+     * 
+     * @param radius the radius of the cube around the robot (ex: 1 for a 3x3x3 cube, 2 for a 5x5x5 cube)
+     * @return vector<bool> a vector of booleans representing the presence of a robot in the cube around the robot
+     * 
+     * @note the vector is ordered as follows : starting from the bottom left corner (the one with lower coordinates) and going to the top right corner (the one with higher coordinates), it first increases the x coordinate, then the y coordinate, and finally the z coordinate
+    */
+    vector<bool> getRobotsArround(int radius);
 
     /*****************************************************************************/
     /** needed to associate code to module                                      **/

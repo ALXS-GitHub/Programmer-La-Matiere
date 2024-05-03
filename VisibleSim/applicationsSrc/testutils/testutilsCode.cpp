@@ -18,6 +18,7 @@
 
 // & Utils
 
+uint64_t Utils::motionsProcessed = 0;
 unordered_set<vector<int>, Utils::CoordinatesHash> Utils::takenDestinations;
 
 void Utils::addTakenDestination(vector<int> destination) {
@@ -42,6 +43,20 @@ void Utils::printTakenDestinations() {
     for (auto &dest : takenDestinations) {
         cout << "Destination : " << dest[0] << ", " << dest[1] << ", " << dest[2] << endl;
     }
+}
+
+int Utils::getCubeDistance(vector<int> pos1, vector<int> pos2) {
+    return max(abs(pos1[0] - pos2[0]), max(abs(pos1[1] - pos2[1]), abs(pos1[2] - pos2[2])));
+}
+
+// getters and setters
+
+uint64_t Utils::getMotionsProcessed() {
+    return motionsProcessed;
+}
+
+void Utils::incrementMotionsProcessed() {
+    motionsProcessed++;
 }
 
 // & Robot Code
@@ -219,31 +234,10 @@ int testutilsCode::findNeighborPort(const Catoms3DBlock *neighbor) {
   return (i<FCCLattice::MAX_NB_NEIGHBORS?i:-1);
 }
 
-void testutilsCode::moveStupid() {
-    vector<std::pair<const Catoms3DMotionRulesLink*, Catoms3DRotation>> motions =
-          Catoms3DMotionEngine::getAllRotationsForModule(module);
-    auto motion=motions.begin();
-    scheduler->schedule(new Catoms3DRotationStartEvent(scheduler->now() + 1000, module, (*motion).second));
-}
-
-void testutilsCode::moveToFirst() {
-    // move to the first possible rotation
-    isMoving = true;
-    vector<std::pair<const Catoms3DMotionRulesLink*, Catoms3DRotation>> motions =
-          Catoms3DMotionEngine::getAllRotationsForModule(module);
-    auto motion=motions.begin();
-    bool found=false;
-    while (motion!=motions.end() && !found) {
-        scheduler->schedule(new Catoms3DRotationStartEvent(scheduler->now() + 1000, module, (*motion).second));
-        found=true;
-        motion++;
-    }
-}
-
-// TODO : optimise this later
 void testutilsCode::moveToN(int n) {
     // move to the nth possible rotation
     isMoving = true;
+    Utils::incrementMotionsProcessed(); // ! important to increment the motions processed counter
     vector<std::pair<const Catoms3DMotionRulesLink*, Catoms3DRotation>> motions =
           Catoms3DMotionEngine::getAllRotationsForModule(module);
     auto motion=motions.begin();
@@ -336,6 +330,9 @@ void testutilsCode::onEndOfSimulation() {
     for (auto &pos : positions) {
         cout << "Position : " << pos[0] << ", " << pos[1] << ", " << pos[2] << endl;
     }
+
+    // testing the getTotalNumberOfMoves function
+    cout << "Total number of moves : " << getTotalNumberOfMoves() << endl;
 }
 
 // & utilities
@@ -437,4 +434,29 @@ vector<vector<int>> testutilsCode::getEndOfSimulationPositions() {
     }
 
     return positions;
+}
+
+int testutilsCode::getTotalNumberOfMoves() {
+    return Utils::getMotionsProcessed();
+}
+
+vector<bool> testutilsCode::getRobotsArround(int radius) {
+
+    int diameter = 2*radius + 1;
+    vector<bool> robotsArround = vector<bool>(diameter*diameter*diameter, false);
+    Cell3DPosition position = module->position;
+    map<bID, BaseSimulator::BuildingBlock *> modules = BaseSimulator::getWorld()->getMap();
+
+    for (auto &elem : modules) {
+        testutilsCode *blockCode = dynamic_cast<testutilsCode *>(elem.second->blockCode);
+        if (blockCode->isLeader) {
+            Cell3DPosition neighborPos = blockCode->module->position;
+            if (Utils::getCubeDistance({position[0], position[1], position[2]}, {neighborPos[0], neighborPos[1], neighborPos[2]}) <= radius) {
+                int x = neighborPos[0] - position[0] + radius; // 0 <= x < diameter
+                int y = neighborPos[1] - position[1] + radius; // 0 <= y < diameter
+                int z = neighborPos[2] - position[2] + radius; // 0 <= z < diameter
+                robotsArround[x + diameter*y + diameter*diameter*z] = true;
+            }
+        }
+    }
 }

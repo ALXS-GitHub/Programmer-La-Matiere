@@ -26,11 +26,27 @@ Cette fonction permet de récupérer les robots `leader` de la simulation. Elle 
 
 Cette fonction permet de récupérer les positions finales des robots `leader` à la fin de la simulation.
 
+### `vector<bool> getRobotsArround(int radius)`
+
+Cette fonction permet de récupérer les robots autour du robot courant dans un rayon donné. Elle utilise la méthode `BaseSimulator::getWorld()->getMap()` pour récupérer la map des robots de la simulation. Elle parcourt ensuite cette map pour récupérer les robots autour du robot courant en utilisant la distance dans le cube.
+
 ## Classe `Utils` 
 
 IMPORTANT
 
 Cette classe est une classe qui devrait normalement faire partie du simulateur mais pour des raisons de simplicité (et pour éviter de modifier le code du simulateur) on la créée au dessus du code du robot. Cette classe contient uniquement des méthodes statiques (donc pas besoin d'instancier la classe) qui permettent de récupérer des informations sur la simulation et de faire communiquer des informations importantes entre les robots (par exemple les position où les robots choisissent de se rendre, ce qui permet d'éviter les collisions).
+
+### `uint64_t Utils::motionsProcessed`
+
+Cet attribut permet de compter le nombre de mouvements traités par les robots.
+
+### `uint64_t Utils::getMotionsProcessed()`
+
+Cette fonction permet de récupérer le nombre de mouvements traités par les robots.
+
+### `void Utils::incrementMotionsProcessed()`
+
+Cette fonction permet d'incrémenter le nombre de mouvements traités par les robots.
 
 ### `struct CoordinatesHash` et `unordered_set<vector<int>, Utils::CoordinatesHash> Utils::takenDestinations`
 
@@ -57,3 +73,7 @@ Cette fonction permet de vérifier si une destination est déjà prise par un ro
 ### `void Utils::printTakenDestinations()`
 
 Cette fonction permet d'afficher les destinations prises par les robots. Elle est utile pour le debugging.
+
+### `int Utils::getCubeDistance(vector<int> pos1, vector<int> pos2)`
+
+Cette fonction permet de calculer la distance entre deux robots dans un cube (on prend le maximum des distances entre les coordonnées x, y et z).

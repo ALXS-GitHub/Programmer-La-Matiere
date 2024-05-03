@@ -276,6 +276,10 @@ void testutilsCode::onInterruptionEvent(shared_ptr<Event> event) {
 
     auto data = dynamic_cast<InterruptionEvent<int> *>(event.get())->data;
 
+    // show the robots around
+    vector<bool> robotsAround = getRobotsArround(2);
+    printRobotsAround(robotsAround);
+
     if (data == 2) { // no move interruption (to simulate the same duration as a normal move)
         this->onMotionEnd();
         return;
@@ -449,14 +453,36 @@ vector<bool> testutilsCode::getRobotsArround(int radius) {
 
     for (auto &elem : modules) {
         testutilsCode *blockCode = dynamic_cast<testutilsCode *>(elem.second->blockCode);
-        if (blockCode->isLeader) {
-            Cell3DPosition neighborPos = blockCode->module->position;
-            if (Utils::getCubeDistance({position[0], position[1], position[2]}, {neighborPos[0], neighborPos[1], neighborPos[2]}) <= radius) {
-                int x = neighborPos[0] - position[0] + radius; // 0 <= x < diameter
-                int y = neighborPos[1] - position[1] + radius; // 0 <= y < diameter
-                int z = neighborPos[2] - position[2] + radius; // 0 <= z < diameter
-                robotsArround[x + diameter*y + diameter*diameter*z] = true;
-            }
+        Cell3DPosition neighborPos = blockCode->module->position;
+        if (Utils::getCubeDistance({position[0], position[1], position[2]}, {neighborPos[0], neighborPos[1], neighborPos[2]}) <= radius) {
+            int x = neighborPos[0] - position[0] + radius; // 0 <= x < diameter
+            int y = neighborPos[1] - position[1] + radius; // 0 <= y < diameter
+            int z = neighborPos[2] - position[2] + radius; // 0 <= z < diameter
+            robotsArround[x + diameter*y + diameter*diameter*z] = true;
         }
+    }
+
+    return robotsArround;
+}
+
+void testutilsCode::printRobotsAround(vector<bool> robotsAround) {
+    int diameter = round(pow(robotsAround.size(), 1.0/3.0));
+    int radius = (diameter - 1) / 2;
+    cout << "^   " << endl;
+    cout << "|   " << endl;
+    cout << "Y   " << endl;
+    cout << " X->" << endl;
+    cout << "-----------------------" << endl;
+    for (int z = 0; z < diameter; z++) {
+        cout << "Z Level : " << z - radius << endl;
+        cout << "[ ";
+        for (int y = diameter-1; y >= 0; y--) {
+            for (int x = 0; x < diameter; x++) {
+                cout << robotsAround[x + diameter*y + diameter*diameter*z] << " ";
+            }
+            cout << endl;
+        }
+        cout << " ]" << endl;
+        cout << "-----------------------" << endl;
     }
 }

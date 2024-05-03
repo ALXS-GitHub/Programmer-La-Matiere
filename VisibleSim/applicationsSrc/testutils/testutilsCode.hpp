@@ -151,7 +151,7 @@ public:
 
     void onEndOfSimulation() override;
 
-    // & utility functions
+    // & utility functions for the robot
 
     void computePossibleMoves();
 
@@ -174,6 +174,13 @@ public:
      * @note the vector is ordered as follows : starting from the bottom left corner (the one with lower coordinates) and going to the top right corner (the one with higher coordinates), it first increases the x coordinate, then the y coordinate, and finally the z coordinate
     */
     vector<bool> getRobotsArround(int radius);
+
+    /**
+     * @brief Print the robots around the current robot
+     * 
+     * @param robotsAround the vector of booleans representing the presence of a robot in the cube around the robot
+    */
+    void printRobotsAround(vector<bool> robotsAround);
 
     /*****************************************************************************/
     /** needed to associate code to module                                      **/

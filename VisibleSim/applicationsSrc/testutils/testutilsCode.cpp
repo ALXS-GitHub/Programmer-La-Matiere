@@ -15,6 +15,8 @@
 #include <chrono>
 #include <set>
 #include <unordered_set>
+#include <iomanip>
+#include <sstream>
 
 // & Utils
 
@@ -468,21 +470,32 @@ vector<bool> testutilsCode::getRobotsArround(int radius) {
 void testutilsCode::printRobotsAround(vector<bool> robotsAround) {
     int diameter = round(pow(robotsAround.size(), 1.0/3.0));
     int radius = (diameter - 1) / 2;
+    int lineWidth = max(diameter*2 + 5, static_cast<int>(strlen("Z Level : -1")) + 2);
     cout << "^   " << endl;
     cout << "|   " << endl;
     cout << "Y   " << endl;
     cout << " X->" << endl;
     cout << "-----------------------" << endl;
+
+    stringstream ss;
     for (int z = 0; z < diameter; z++) {
-        cout << "Z Level : " << z - radius << endl;
-        cout << "[ ";
-        for (int y = diameter-1; y >= 0; y--) {
-            for (int x = 0; x < diameter; x++) {
-                cout << robotsAround[x + diameter*y + diameter*diameter*z] << " ";
-            }
-            cout << endl;
-        }
-        cout << " ]" << endl;
-        cout << "-----------------------" << endl;
+        ss << "Z Level : " << z - radius;
+        cout << setw(lineWidth) << left << ss.str();
+        ss.str("");
     }
+    cout << endl;
+
+    for (int y = diameter-1; y >= 0; y--) {
+        for (int z = 0; z < diameter; z++) {
+            stringstream ss;
+            ss << "[ ";
+            for (int x = 0; x < diameter; x++) {
+                ss << robotsAround[x + diameter*y + diameter*diameter*z] << " ";
+            }
+            ss << "]";
+            cout << setw(lineWidth) << left << ss.str();
+        }
+        cout << endl;
+    }
+    cout << "-----------------------" << endl;
 }

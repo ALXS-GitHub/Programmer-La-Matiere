@@ -37,6 +37,7 @@ class NeuralNetwork {
             void setActivationFunctionOutput(string activationFunction); // either "sigmoid", "relu" or "tanh" else default to sigmoid
             vector<double> feedForward(vector<double> inputs); // feed forward the inputs through the network
             vector<vector<vector<double>>> generateRandomWeights(); // generate random weights for the network
+            vector<vector<vector<double>>> reshapeWeights(vector<double> flatWeights); // reshape the flat weights into the weights of the network
 
 };
 

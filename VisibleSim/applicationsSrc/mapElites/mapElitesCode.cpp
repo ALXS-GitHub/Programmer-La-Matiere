@@ -9,6 +9,8 @@
 
 #include "mapElitesCode.hpp"
 #include "neural_network.hpp"
+#include "robot_utils.hpp"
+#include "socket_connector.hpp"
 #include "robots/catoms3D/catoms3DMotionEngine.h"
 #include "robots/catoms3D/catoms3DRotationEvents.h"
 #include <thread>
@@ -17,49 +19,6 @@
 #include <unordered_set>
 #include <iomanip>
 #include <sstream>
-
-// & Utils
-
-uint64_t Utils::motionsProcessed = 0;
-unordered_set<vector<int>, Utils::CoordinatesHash> Utils::takenDestinations;
-
-void Utils::addTakenDestination(vector<int> destination) {
-    takenDestinations.insert(destination);
-}
-
-void Utils::removeTakenDestination(vector<int> destination) {
-    takenDestinations.erase(destination);
-}
-
-bool Utils::isDestinationTaken(vector<int> destination) {
-    return takenDestinations.find(destination) != takenDestinations.end();
-}
-
-void Utils::printTakenDestinations() {
-
-    if (takenDestinations.empty()) {
-        cout << "No taken destinations" << endl;
-        return;
-    }
-
-    for (auto &dest : takenDestinations) {
-        cout << "Destination : " << dest[0] << ", " << dest[1] << ", " << dest[2] << endl;
-    }
-}
-
-int Utils::getCubeDistance(vector<int> pos1, vector<int> pos2) {
-    return max(abs(pos1[0] - pos2[0]), max(abs(pos1[1] - pos2[1]), abs(pos1[2] - pos2[2])));
-}
-
-// getters and setters
-
-uint64_t Utils::getMotionsProcessed() {
-    return motionsProcessed;
-}
-
-void Utils::incrementMotionsProcessed() {
-    motionsProcessed++;
-}
 
 // & Robot Code
 
@@ -100,7 +59,23 @@ mapElitesCode::mapElitesCode(Catoms3DBlock *host) : Catoms3DBlockCode(host), mod
     // TODO set the weights from the socket
     // 25, 2, 25, 27
 
-    vector<vector<vector<double>>> weights = nn.generateRandomWeights();
+    // vector<vector<vector<double>>> weights = nn.generateRandomWeights();
+    if (Utils::areWeightsReceived()) {
+        vector<vector<vector<double>>> weights = Utils::getWeights();
+        nn.setWeights(weights);
+    } else {
+        if (client.connectToServer()) {
+            vector<double> weights = client.receiveDataVector();
+            // nn.reshapeWeights(weights);
+            vector<vector<vector<double>>> w = nn.reshapeWeights(weights);
+            Utils::setWeightsReceived(true);
+            Utils::setWeights(w);
+            cout << "Weights received" << endl;
+        } else {
+            console << "Failed to connect to the server" << "\n";
+            cout << "Failed to connect to the server" << endl;
+        }
+    }
     nn.setActivationFunction("relu");
     nn.setActivationFunctionOutput("relu");
 }

@@ -11,6 +11,8 @@
 #define mapElitesCode_H_
 
 #include "neural_network.hpp"
+#include "robot_utils.hpp"
+#include "socket_connector.hpp"
 #include "robots/catoms3D/catoms3DSimulator.h"
 #include "robots/catoms3D/catoms3DWorld.h"
 #include "robots/catoms3D/catoms3DBlockCode.h"
@@ -28,39 +30,6 @@ static const int BROADCAST_MSG_ID = 1005;
 
 using namespace Catoms3D;
 
-// & Utils class
-// !!!!!!!!! This should be in the simulator, but for easier access, we put it here !!!!!!!!!
-
-class Utils
-{
-    private:
-        static uint64_t motionsProcessed;
-
-    public:
-        struct CoordinatesHash {
-            size_t operator()(const std::vector<int>& v) const {
-                std::hash<int> hasher;
-                size_t seed = 0;
-                for (int i : v) {
-                    seed ^= hasher(i) + 0x9e3779b9 + (seed<<6) + (seed>>2);
-                }
-                return seed;
-            }
-        };
-        static unordered_set<vector<int>, CoordinatesHash> takenDestinations; // list of the destinations already taken (to avoid having two modules going to the same destination)
-        static void addTakenDestination(vector<int> destination);
-        static void removeTakenDestination(vector<int> destination);
-        static bool isDestinationTaken(vector<int> destination);
-        static void printTakenDestinations(); // Especially for debugging
-        static int getCubeDistance(vector<int> pos1, vector<int> pos2); // get the distance between two positions in the cube
-
-        // getters and setters
-        static uint64_t getMotionsProcessed();
-        static void incrementMotionsProcessed();
-
-};
-// !*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!
-
 // & Robot class
 
 class mapElitesCode : public Catoms3DBlockCode
@@ -74,6 +43,7 @@ private:
     bool isMoving = false;
     int moveTo = 0;
     int numberOfMoves = 12;
+    SocketClient client;
     NeuralNetwork nn = NeuralNetwork(125, 2, 25, 27); // create the neural network
     vector<vector<int>> NNMovesMapping = {
         {0, 0, 0},

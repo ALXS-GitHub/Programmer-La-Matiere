@@ -204,3 +204,33 @@ vector<vector<vector<double>>> NeuralNetwork::generateRandomWeights() {
     return this->weights;
 }
 
+/**
+ * @brief Reshape the flat weights into the weights of the network
+ * 
+ * @param flatWeights the flat weights to reshape
+ * @return vector<vector<vector<double>>> the reshaped weights
+*/
+vector<vector<vector<double>>> NeuralNetwork::reshapeWeights(vector<double> flatWeights) {
+    this->weights = vector<vector<vector<double>>>(this->numHiddenLayers + 1); // initialize the weights vector
+
+    int index = 0;
+    for (int i = 0; i < this->numHiddenLayers + 1; i++) {
+        if (i == 0) {
+            this->weights[i] = vector<vector<double>>(this->numNeuronsPerHiddenLayer, vector<double>(this->numInputs + (this->useBias ? 1 : 0)));
+        } else if (i == this->numHiddenLayers) {
+            this->weights[i] = vector<vector<double>>(this->numOutputs, vector<double>(this->numNeuronsPerHiddenLayer + (this->useBias ? 1 : 0)));
+        } else {
+            this->weights[i] = vector<vector<double>>(this->numNeuronsPerHiddenLayer, vector<double>(this->numNeuronsPerHiddenLayer + (this->useBias ? 1 : 0)));
+        }
+
+        for (auto &innerVec : this->weights[i]) {
+            for (double &weight : innerVec) {
+                weight = flatWeights[index]; // set the weight to the value in the flat weights
+                index++;
+            }
+        }
+    }
+
+    this->checkWeights(); // check if the weights are of the right size
+    return this->weights;
+}

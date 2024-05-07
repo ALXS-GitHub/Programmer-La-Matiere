@@ -25,9 +25,50 @@ bool SocketClient::connectToServer() {
     return true;
 }
 
+bool SocketClient::isConnected() {
+    return client_socket != -1;
+}
+
+void SocketClient::sendData(const char* data, const string& tag) {
+
+    cout << "Sending data: " << data << endl;
+
+    // Send the data
+    send(client_socket, data, strlen(data), 0);
+
+    // Set a timeout of 5 seconds
+    struct timeval timeout;
+    timeout.tv_sec = 5;
+    timeout.tv_usec = 0;
+    if (setsockopt(client_socket, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeout, sizeof(timeout)) < 0) {
+        cout << "Failed to set timeout: " << strerror(errno) << endl;
+        return;
+    }
+
+    // Receive an acknowledgment
+    char ack[1024];
+    int bytes_received = recv(client_socket, ack, 1024, 0);
+    if (bytes_received <= 0) {
+        if (errno == EWOULDBLOCK || errno == EAGAIN) {
+            cout << "Timeout waiting for ACK for" << tag << endl;
+        } else {
+            cout << "Failed to receive acknowledgment: " << strerror(errno) << endl;
+        }
+        return;
+    }
+
+    ack[bytes_received] = '\0'; // Null-terminate the string
+    string ack_str(ack);
+
+    if (ack_str != "ACK:" + tag) {
+        cout << "Failed to receive ACK for " << tag << ", got" << ack_str << endl;
+        return;
+    }
+}
+
 char* SocketClient::receiveData(const size_t &size, const string& tag) {
-    // Receive the size of the 1D array
-    char* buffer = new char[size];
+    // Receive the data
+    char* buffer = new char[size + 1];
     if (!buffer) {
         cout << "Failed to allocate memory" << endl;
         return nullptr;
@@ -43,6 +84,7 @@ char* SocketClient::receiveData(const size_t &size, const string& tag) {
     string ack = "ACK:" + tag;
     send(client_socket, ack.c_str(), ack.size(), 0);
 
+    buffer[bytes_received] = '\0'; // Null-terminate the string
     return buffer;
 }
 

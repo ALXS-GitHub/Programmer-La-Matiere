@@ -24,6 +24,8 @@ public:
     SocketClient();
     ~SocketClient();
     bool connectToServer();
+    bool isConnected();
+    void sendData(const char* data, const string& tag);
     char* receiveData(const size_t &size, const string& tag);
     vector<double> receiveDataVector();
 };

@@ -317,6 +317,37 @@ void mapElitesCode::onEndOfSimulation() {
 
     // testing the getTotalNumberOfMoves function
     cout << "Total number of moves : " << getTotalNumberOfMoves() << endl;
+
+    // send the data back to the server
+    if (client.isConnected()) {
+        // convert the whole vector to a string
+        std::ostringstream positions_stream;
+        for (auto &pos : positions) {
+            for (auto &p : pos) {
+                positions_stream << p << " ";
+            }
+        }
+        std::string positions_str = positions_stream.str();
+
+        // Remove the trailing space
+        if (!positions_str.empty()) {
+            positions_str.pop_back();
+        }
+
+        size_t size = positions_str.size();
+        string size_str = to_string(size);
+        client.sendData(size_str.c_str(), "SIZE");
+
+        client.sendData(positions_str.c_str(), "POSITIONS");
+
+        // finally send the total number of moves
+        int totalMoves = getTotalNumberOfMoves();
+        string totalMoves_str = to_string(totalMoves);
+        client.sendData(totalMoves_str.c_str(), "TOTAL_MOVES");
+    } else {
+        console << "Failed to connect to the server" << "\n";
+        cout << "Failed to connect to the server" << endl;
+    }
 }
 
 // & utilities

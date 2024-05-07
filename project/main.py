@@ -26,7 +26,15 @@ server_socket.bind(server_address)
 server_socket.listen(1)
 
 # TODO: il faudra peut-être rendre les send et recv en non bloquants pour pouvoir envoyer et recevoir en même temps à plusieurs clients
-def send_data_with_ack(connection, data, tag):
+def send_data(connection, data, tag):
+    """
+    Send data to the client and wait for an ACK
+
+    Args:
+        connection (socket): The connection to the client
+        data (bytes): The data to send
+        tag (str): The tag to check the ACK
+    """
     connection.sendall(data)
     connection.settimeout(5)
     
@@ -37,17 +45,25 @@ def send_data_with_ack(connection, data, tag):
     except socket.timeout:
         raise Exception(f"Timeout waiting for ACK for {tag}")
 
-def receive_data(connection):
-    data_size = int(connection.recv(16).decode())
-    data_buffer = b""
-    while len(data_buffer) < data_size:
-        more_data = connection.recv(data_size - len(data_buffer))
-        if not more_data:
-            raise Exception("Failed to receive all data")
-        data_buffer += more_data
+def receive_data(connection, size, tag):
+    """
+    Receive data from the client and send an ACK
 
-    # Deserialize the received data
-    received_data = pickle.loads(data_buffer)
+    Args:
+        connection (socket): The connection to the client
+        size (int): The size of the data to receive
+        tag (str): The tag to send the ACK
+    """
+    connection.settimeout(None)
+    
+    # recieve data
+    received_data = b''
+    received_data = connection.recv(size)
+    
+    # send ACK
+    connection.sendall(f"ACK:{tag}".encode())
+
+    print(received_data)
     return received_data
 
 print("Attente de la connexion du client...")
@@ -61,13 +77,21 @@ while True:
         # TODO: ici, il faut lancer une itération d'entrainement, puis remplacer data par la matrice des poids du nouveau réseau à éval
         data = generate_random_weights(2, 25, 125, 27, False)
         
-        send_data_with_ack(connection, str(data.size).encode(), "SIZE")
-        send_data_with_ack(connection, data, "WEIGHTS")
+        send_data(connection, str(data.size).encode(), "SIZE")
+        send_data(connection, data, "WEIGHTS")
         print(data)
         
         # Wait for the client to send data
-        # received_data = receive_data(connection)
-        # print(received_data)
+        size_to_receive = int(receive_data(connection, 1024, "SIZE").decode()) # here size to receive already takes into account the size of the data in bytes
+        received_data = receive_data(connection, size_to_receive, "POSITIONS").decode()
+        nb_of_moves = receive_data(connection, 1024, "TOTAL_MOVES").decode()
+        
+        # received_data should be constitued of vectors of size 3
+        received_data = received_data.split(" ")
+        received_data = [int(x) for x in received_data if x != ""]
+        
+        print("NB moves ", nb_of_moves)
+        print("Positions ", received_data)
 
     finally:
         connection.close()

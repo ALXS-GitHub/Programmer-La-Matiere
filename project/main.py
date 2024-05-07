@@ -17,11 +17,38 @@ def generate_random_weights(num_hidden_layers, num_neurons_per_hidden_layer, num
     return weights
 
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+# Set the SO_REUSEADDR option
+server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
 server_address = ('localhost', 6969)
 server_socket.bind(server_address)
 
 server_socket.listen(1)
+
+# TODO: il faudra peut-être rendre les send et recv en non bloquants pour pouvoir envoyer et recevoir en même temps à plusieurs clients
+def send_data_with_ack(connection, data, tag):
+    connection.sendall(data)
+    connection.settimeout(5)
+    
+    try:
+        ack = connection.recv(1024).decode()
+        if ack != f"ACK:{tag}":
+            raise Exception(f"Failed to receive ACK for {tag}")
+    except socket.timeout:
+        raise Exception(f"Timeout waiting for ACK for {tag}")
+
+def receive_data(connection):
+    data_size = int(connection.recv(16).decode())
+    data_buffer = b""
+    while len(data_buffer) < data_size:
+        more_data = connection.recv(data_size - len(data_buffer))
+        if not more_data:
+            raise Exception("Failed to receive all data")
+        data_buffer += more_data
+
+    # Deserialize the received data
+    received_data = pickle.loads(data_buffer)
+    return received_data
 
 print("Attente de la connexion du client...")
 while True:
@@ -34,11 +61,13 @@ while True:
         # TODO: ici, il faut lancer une itération d'entrainement, puis remplacer data par la matrice des poids du nouveau réseau à éval
         data = generate_random_weights(2, 25, 125, 27, False)
         
-        connection.sendall(str(data.size).encode())
-        time.sleep(1)
-        connection.sendall(data.tobytes())
-        # time.sleep(1)
+        send_data_with_ack(connection, str(data.size).encode(), "SIZE")
+        send_data_with_ack(connection, data, "WEIGHTS")
         print(data)
+        
+        # Wait for the client to send data
+        # received_data = receive_data(connection)
+        # print(received_data)
 
     finally:
         connection.close()

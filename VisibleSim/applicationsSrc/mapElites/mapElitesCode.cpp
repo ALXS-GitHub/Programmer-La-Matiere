@@ -268,19 +268,19 @@ void mapElitesCode::onInterruptionEvent(shared_ptr<Event> event) {
     vector<double> robotsAroundDouble(robotsAround.begin(), robotsAround.end());
 
     // print the input
-    cout << "Input : ";
-    for (auto &in : robotsAroundDouble) {
-        cout << in << " ";
-    }
-    cout << endl;
+    // cout << "Input : ";
+    // for (auto &in : robotsAroundDouble) {
+    //     cout << in << " ";
+    // }
+    // cout << endl;
 
     vector<double> output = nn.feedForward(robotsAroundDouble);
     // print the output
-    cout << "Output : ";
-    for (auto &out : output) {
-        cout << out << " ";
-    }
-    cout << endl;
+    // cout << "Output : ";
+    // for (auto &out : output) {
+    //     cout << out << " ";
+    // }
+    // cout << endl;
 
     computePossibleMoves();
     int bestMove = getBestMoveIndex(output);
@@ -334,9 +334,9 @@ void mapElitesCode::onEndOfSimulation() {
             positions_str.pop_back();
         }
 
-        size_t size = positions_str.size();
-        string size_str = to_string(size);
-        client.sendData(size_str.c_str(), "SIZE");
+        // size_t size = positions_str.size();
+        // string size_str = to_string(size);
+        // client.sendData(size_str.c_str(), "SIZE");
 
         client.sendData(positions_str.c_str(), "POSITIONS");
 

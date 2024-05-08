@@ -33,8 +33,17 @@ void SocketClient::sendData(const char* data, const string& tag) {
 
     cout << "Sending data: " << data << endl;
 
+    // Get the length of the data
+    uint32_t length = strlen(data);
+
+    // Convert the length to network byte order
+    uint32_t length_net = htonl(length);
+
+    // Send the length
+    send(client_socket, &length_net, sizeof(length_net), 0);
+
     // Send the data
-    send(client_socket, data, strlen(data), 0);
+    send(client_socket, data, length, 0);
 
     // Set a timeout of 5 seconds
     struct timeval timeout;
@@ -102,10 +111,10 @@ vector<double> SocketClient::receiveDataVector() {
 
     double* data = (double*)buffer;
 
-    for (int i = 0; i < size; ++i) {
-        cout << data[i] << " ";
-    }
-    cout << endl;
+    // for (int i = 0; i < size; ++i) {
+    //     cout << data[i] << " ";
+    // }
+    // cout << endl;
 
     vector<double> data_vector(data, data + size);
 

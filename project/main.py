@@ -4,128 +4,177 @@ import time
 import os
 import subprocess
 import struct
+import concurrent.futures
+
 
 # set the current working directory to the file's directory
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-def load_weights(filename):
-    weights = np.loadtxt(filename)
-    return weights
+class Master:
+    def __init__(self, host='localhost', port=6969, executable="../VisibleSim/applicationsBin/mapElites/mapElites", executable_config="../VisibleSim/applicationsBin/mapElites/config.xml"):
+        # server configuration
+        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.server_socket.bind((host, port))
+        self.server_socket.listen(1)
 
-def generate_random_weights(num_hidden_layers, num_neurons_per_hidden_layer, num_inputs, num_outputs, use_bias):
-    weights = []
-
-    for i in range(num_hidden_layers + 1):
-        if i == 0:
-            weights.append(np.random.rand(num_neurons_per_hidden_layer, num_inputs + (1 if use_bias else 0)))
-        elif i == num_hidden_layers:
-            weights.append(np.random.rand(num_outputs, num_neurons_per_hidden_layer + (1 if use_bias else 0)))
-        else:
-            weights.append(np.random.rand(num_neurons_per_hidden_layer, num_neurons_per_hidden_layer + (1 if use_bias else 0)))
-
-    weights = np.concatenate([arr.flatten() for arr in weights])
-    
-    # save the weights in a file for debbuging
-    np.savetxt('weights.log', weights)
-    
-    return weights
-
-server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-# Set the SO_REUSEADDR option
-server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-
-server_address = ('localhost', 6969)
-server_socket.bind(server_address)
-
-server_socket.listen(1)
-
-# TODO: il faudra peut-être rendre les send et recv en non bloquants pour pouvoir envoyer et recevoir en même temps à plusieurs clients
-def send_data(connection, data, tag):
-    """
-    Send data to the client and wait for an ACK
-
-    Args:
-        connection (socket): The connection to the client
-        data (bytes): The data to send
-        tag (str): The tag to check the ACK
-    """
-    connection.sendall(data)
-    connection.settimeout(5)
-    
-    try:
-        ack = connection.recv(1024).decode()
-        if ack != f"ACK:{tag}":
-            raise Exception(f"Failed to receive ACK for {tag}")
-    except socket.timeout:
-        raise Exception(f"Timeout waiting for ACK for {tag}")
-
-def receive_data(connection, tag):
-    length_bytes = connection.recv(4)
-    length = struct.unpack('!I', length_bytes)[0]
-    
-    data = b''
-    data = connection.recv(length)
-    
-    connection.sendall(f"ACK:{tag}".encode())
-    return data
-
-def print_subprocess_output(process):
-    """
-    Print the output of a subprocess
-
-    Args:
-        process (subprocess.Popen): The subprocess to get the output from
-    """
-    print("SUBPROCESS")
-    stdout, stderr = process.communicate()
-    print(stdout.decode())
-    print(stderr.decode())
-
-print("Attente de la connexion du client...")
-# !!! from the python code, only run this in terminal mode
-i = 50
-
-while i > 0:
-    process = subprocess.Popen(["../VisibleSim/applicationsBin/mapElites/mapElites", "-c", "../VisibleSim/applicationsBin/mapElites/config.xml", "-t"], start_new_session=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    connection, client_address = server_socket.accept()
-    
-    # Run the client
-
-    try:
-        print("Connexion établie avec", client_address)
+        # other configuration
+        self.executable = executable
+        self.executable_config = executable_config
+        self.weights = None
         
-        # ? Matrice "jouet" pour tester la communication
-        # TODO: ici, il faut lancer une itération d'entrainement, puis remplacer data par la matrice des poids du nouveau réseau à éval
-        data = generate_random_weights(2, 25, 125, 27, False)
-        # data = load_weights('weights_error.log')
+
+    def load_weights(self, filename):
+        """
+        Load the weights from a file
         
-        send_data(connection, str(data.size).encode(), "SIZE")
-        send_data(connection, data, "WEIGHTS")
-        print(data)
+        Args:
+            filename (str): The name of the file to load the weights from
+        """
+        weights = np.loadtxt(filename)
+        self.weights = weights
+        return weights
+
+    def generate_random_weights(self, num_hidden_layers, num_neurons_per_hidden_layer, num_inputs, num_outputs, use_bias, save=False):
+        """
+        Generate random weights for a neural network
         
+        Args:
+            num_hidden_layers (int): The number of hidden layers
+            num_neurons_per_hidden_layer (int): The number of neurons per hidden layer
+            num_inputs (int): The number of inputs
+            num_outputs (int): The number of outputs
+            use_bias (bool): If True, add a bias to the neurons
+        """
+        weights = []
+
+        for i in range(num_hidden_layers + 1):
+            if i == 0:
+                weights.append(np.random.rand(num_neurons_per_hidden_layer, num_inputs + (1 if use_bias else 0)))
+            elif i == num_hidden_layers:
+                weights.append(np.random.rand(num_outputs, num_neurons_per_hidden_layer + (1 if use_bias else 0)))
+            else:
+                weights.append(np.random.rand(num_neurons_per_hidden_layer, num_neurons_per_hidden_layer + (1 if use_bias else 0)))
+
+        weights = np.concatenate([arr.flatten() for arr in weights])
         
+        # save the weights in a file for debbuging
+        if save:
+            np.savetxt('logs/weights.log', weights)
         
-        # Wait for the client to send data
+        self.weights = weights
+        return weights
+
+    # TODO: il faudra peut-être rendre les send et recv en non bloquants pour pouvoir envoyer et recevoir en même temps à plusieurs clients
+    def send_data(self, connection, data, tag):
+        """
+        Send data to the client and wait for an ACK
+
+        Args:
+            connection (socket): The connection to the client
+            data (bytes): The data to send
+            tag (str): The tag to check the ACK
+        """
+        connection.sendall(data)
+        connection.settimeout(5)
+        
         try:
-            # size_to_receive = int(receive_data(connection, 4, "SIZE").decode()) # here size to receive already takes into account the size of the data in bytes
-            received_data = receive_data(connection, "POSITIONS").decode()
-            nb_of_moves = receive_data(connection, "TOTAL_MOVES").decode()
-        except Exception as e:
-            print(f"An error occurred: {e}")
-            # print_subprocess_output(process);
-        
-        # received_data should be constitued of vectors of size 3
-        received_data = received_data.split(" ")
-        received_data = [int(x) for x in received_data if x != ""]
-        received_data = np.array(received_data).reshape(-1, 3)
-        
-        
-        
-        print("NB moves ", nb_of_moves)
-        print("Positions \n", received_data)
+            ack = connection.recv(1024).decode()
+            if ack != f"ACK:{tag}":
+                raise Exception(f"Failed to receive ACK for {tag}")
+        except socket.timeout:
+            raise Exception(f"Timeout waiting for ACK for {tag}")
 
-    finally:
-        connection.close()
+    def receive_data(self, connection, tag):
+        """
+        Receive data from the client and send an ACK
+        In details, it first receives the length of the data, then the data itself
         
+        Args:
+            connection (socket): The connection to the client
+            tag (str): The tag to send in the ACK
+        """
+        length_bytes = connection.recv(4)
+        length = struct.unpack('!I', length_bytes)[0]
         
-    i -= 1
+        data = b''
+        data = connection.recv(length)
+        
+        connection.sendall(f"ACK:{tag}".encode())
+        return data
+
+    def print_subprocess_output(self, process):
+        """
+        Print the output of a subprocess
+
+        Args:
+            process (subprocess.Popen): The subprocess to get the output from
+        """
+        print("SUBPROCESS")
+        stdout, stderr = process.communicate()
+        print(stdout.decode())
+        print(stderr.decode())
+
+    def run(self, auto=True):
+        """
+        Run the server and wait for a client to connect
+        
+        Args:
+            auto (bool): If True, the client will be automatically started
+        """
+        print("Attente de la connexion du client...")
+        # !!! from the python code, only run this in terminal mode
+        if auto:
+            process = subprocess.Popen([self.executable, "-c", self.executable_config, "-t"], start_new_session=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        connection, client_address = self.server_socket.accept()
+        
+        # Run the client
+
+        try:
+            print("Connexion établie avec", client_address)
+            
+            # ? Matrice "jouet" pour tester la communication
+            # TODO: ici, il faut lancer une itération d'entrainement, puis remplacer data par la matrice des poids du nouveau réseau à éval
+            data = self.generate_random_weights(2, 25, 125, 27, False)
+            # data = load_weights('logs/weights_error.log')
+            
+            self.send_data(connection, str(data.size).encode(), "SIZE")
+            self.send_data(connection, data, "WEIGHTS")
+            print(data)
+            
+            
+            
+            # Wait for the client to send data
+            try:
+                # size_to_receive = int(receive_data(connection, 4, "SIZE").decode()) # here size to receive already takes into account the size of the data in bytes
+                received_data = self.receive_data(connection, "POSITIONS").decode()
+                nb_of_moves = self.receive_data(connection, "TOTAL_MOVES").decode()
+            except Exception as e:
+                print(f"An error occurred: {e}")
+                # print_subprocess_output(process);
+            
+            # received_data should be constitued of vectors of size 3
+            received_data = received_data.split(" ")
+            received_data = [int(x) for x in received_data if x != ""]
+            received_data = np.array(received_data).reshape(-1, 3)
+            
+            
+            
+            print("NB moves ", nb_of_moves)
+            print("Positions \n", received_data)
+
+        finally:
+            connection.close()
+        
+    # TODO : change this function to work with mapElites
+    # in the future, !be careful! with this function (! to avoid writing in the same memory space !)
+    def run_parallel(self, steps = 50):
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            for i in range(steps):
+                executor.submit(self.run)
+            
+if __name__ == "__main__":
+    master = Master()
+    # master.run_parallel(50) # ps ici les outputs sont mélangés, mais c'est normal (si vous voulez les voir dans l'ordre faite une boucle for avec master.run())
+    master.run()
+    

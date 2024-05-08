@@ -83,7 +83,9 @@ def print_subprocess_output(process):
 
 print("Attente de la connexion du client...")
 # !!! from the python code, only run this in terminal mode
-while True:
+i = 50
+
+while i > 0:
     process = subprocess.Popen(["../VisibleSim/applicationsBin/mapElites/mapElites", "-c", "../VisibleSim/applicationsBin/mapElites/config.xml", "-t"], start_new_session=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     connection, client_address = server_socket.accept()
     
@@ -126,4 +128,4 @@ while True:
         connection.close()
         
         
-    break
+    i -= 1

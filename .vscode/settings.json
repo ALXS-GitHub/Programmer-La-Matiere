@@ -7,5 +7,6 @@
         "*.tcc": "cpp",
         "iomanip": "cpp",
         "functional": "cpp"
-    }
+    },
+    "cmake.sourceDirectory": "/workspaces/Programmer-La-Matiere/VisibleSim"
 }

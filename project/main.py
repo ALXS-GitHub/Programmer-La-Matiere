@@ -5,6 +5,7 @@ import os
 import subprocess
 import struct
 import concurrent.futures
+from learning.mapElites import MapElites
 
 
 # set the current working directory to the file's directory
@@ -22,6 +23,12 @@ class Master:
         self.executable = executable
         self.executable_config = executable_config
         self.weights = None
+
+        self.num_hidden_layers = 2
+        self.num_neurons_per_hidden_layer = 25
+        self.num_inputs = 125
+        self.num_outputs = 27
+        self.map_elites = MapElites({"size":self.num_inputs + self.num_outputs + self.num_hidden_layers*self.num_neurons_per_hidden_layer}, 30, 30, 0.1)
         
 
     def load_weights(self, filename):
@@ -64,6 +71,16 @@ class Master:
         
         self.weights = weights
         return weights
+
+    def generate_weights(self):
+        """
+        Generate weights for a neural network
+        
+        Args:
+            N/A
+        """
+        
+        return self.map_elites.get_next_individual()
 
     # TODO: il faudra peut-être rendre les send et recv en non bloquants pour pouvoir envoyer et recevoir en même temps à plusieurs clients
     def send_data(self, connection, data, tag):
@@ -135,7 +152,8 @@ class Master:
             
             # ? Matrice "jouet" pour tester la communication
             # TODO: ici, il faut lancer une itération d'entrainement, puis remplacer data par la matrice des poids du nouveau réseau à éval
-            data = self.generate_random_weights(2, 25, 125, 27, False)
+            #data = self.generate_random_weights(2, 25, 125, 27, False)
+            data = self.generate_weights()
             # data = load_weights('logs/weights_error.log')
             
             self.send_data(connection, str(data.size).encode(), "SIZE")

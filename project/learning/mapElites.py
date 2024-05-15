@@ -2,9 +2,10 @@ import numpy as np
 import pickle as pkl
 
 class Archive:
-    def __init__(self, cols,rows):
+    def __init__(self, cols,rows,size):
         self.cols = cols
         self.rows = rows
+        self.size = size
         self.archive = [[None for _ in range(cols)] for _ in range(rows)]
         self.archive = np.array(self.archive)
     
@@ -23,16 +24,16 @@ class Archive:
             x = np.random.randint(0, self.cols)
             y = np.random.randint(0, self.rows)
         individual = self.archive[x][y]
-        noise = np.random.normal(0, noise, individual.shape)
+        noise = np.random.normal(0, noise, self.size)
         individual += noise
         return individual
 
 
 class MapElites:
     def __init__(self, config,cols,rows, noise=0.1):
-        self.shape = config.shape
+        self.size = config["size"]
         self.noise = noise
-        self.archive = Archive(cols=cols, rows=rows)
+        self.archive = Archive(cols=cols, rows=rows, size=self.size)
         self.individuals_added = 0
     
     def register_results(self, individual, x, y, energy):
@@ -42,9 +43,9 @@ class MapElites:
     def get_next_individual(self):
         if self.individuals_added == 0:
             self.individuals_added += 1
-            return np.random.normal(0, 10, self.shape)
+            return np.random.normal(0, 10, self.size)
         newIndividual = self.archive.get_random_individual(self.noise)
-        return newIndividual.reshape(self.shape)
+        return newIndividual
     
     def displayHeatmap(self):
         # à voir comment afficher la heatmap

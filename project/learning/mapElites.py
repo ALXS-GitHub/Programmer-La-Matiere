@@ -71,6 +71,9 @@ class MapElites:
             return
         with open(filename, 'rb') as f:
             self = pkl.load(f)
+
+    def get_custom_individual(self, x, y):
+        return self.archive.archive[x][y]
     
 
 

@@ -155,6 +155,7 @@ class Master:
             # TODO: ici, il faut lancer une itération d'entrainement, puis remplacer data par la matrice des poids du nouveau réseau à éval
             #data = self.generate_random_weights(2, 25, 125, 27, False)
             data = self.generate_weights()
+            # data = self.map_elites.get_custom_individual(15, 15) # sert à récupérer un individu spécifique dans la map
             # data = load_weights('logs/weights_error.log')
             
             self.send_data(connection, str(data.size).encode(), "SIZE")

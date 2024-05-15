@@ -7,8 +7,13 @@ class Archive:
         self.archive = [[None for _ in range(cols)] for _ in range(rows)]
         self.archive = np.array(self.archive)
     
-    def add(self, individual, x, y):
-        self.archive[x][y] = np.array(individual).flatten()
+    def add(self, individual, x, y, energy):
+        if self.archive[x][y] is None:
+            self.archive[x][y] = (individual,energy)
+        else:
+            _,prev_energy = self.archive[x][y]
+            if energy > prev_energy: # le critère conservé ici est l'énergie
+                self.archive[x][y] = (individual,energy)
     
     def get_random_individual(self,noise):
         x = np.random.randint(0, self.cols)
@@ -28,9 +33,8 @@ class MapElites:
         self.noise = noise
         self.archive = Archive(cols=cols, rows=rows)
     
-    def register_results(self, individual, x, y):
-        # TODO : Utiliser les fonctions d'éval de Michaël pour évaluer l'individu et donc déterminer ses coordonnées dans l'archive.
-        self.archive.add(individual, x, y)
+    def register_results(self, individual, x, y, energy):
+        self.archive.add(individual, x, y, energy)
 
     def get_next_individual(self):
         newIndividual = self.archive.get_random_individual(self.noise)

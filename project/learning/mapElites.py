@@ -1,6 +1,7 @@
 import numpy as np
 import pickle as pkl
 import matplotlib.pyplot as plt
+import os
 
 class Archive:
     def __init__(self, cols,rows,size):
@@ -65,8 +66,12 @@ class MapElites:
     
     def load_from_file(self, filename):
         """Load the archive from a file using pickle."""
+        if not os.path.exists(filename):
+            print("The file does not exist. Creating a new map.")
+            return
         with open(filename, 'rb') as f:
             self = pkl.load(f)
+    
 
 
 

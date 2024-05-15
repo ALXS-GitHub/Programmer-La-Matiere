@@ -29,6 +29,7 @@ class Master:
         self.num_inputs = 125
         self.num_outputs = 27
         self.map_elites = MapElites({"size":self.num_inputs + self.num_outputs + self.num_hidden_layers*self.num_neurons_per_hidden_layer}, 30, 30, 0.1)
+        self.map_elites.load_from_file("mapElites.pkl")
         
 
     def load_weights(self, filename):
@@ -178,7 +179,10 @@ class Master:
             
             # TODO : Calculer les coordonnées dans la map en fonction de received_data
             # ! Attention à bien scale les coordonnées. Par exemple si le max théorique pour une dimension est 100 et que la map a pas 100 cases, il faut normaliser les coordonnées entre 0 et 1 puis les multiplier par le nombre de cases de la map
-            self.map_elites.register_results(data, 15, 15, nb_of_moves)
+
+            x_coord = 15 # à changer
+            y_coord = 15 # à changer
+            self.map_elites.register_results(data, x_coord, y_coord, nb_of_moves)
             
             print("NB moves ", nb_of_moves)
             print("Positions \n", received_data)
@@ -186,6 +190,7 @@ class Master:
         finally:
             connection.close()
             self.map_elites.displayHeatmap()
+            self.map_elites.export_to_file("mapElites.pkl")
         
     # TODO : change this function to work with mapElites
     # in the future, !be careful! with this function (! to avoid writing in the same memory space !)

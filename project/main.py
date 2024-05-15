@@ -176,13 +176,16 @@ class Master:
             received_data = [int(x) for x in received_data if x != ""]
             received_data = np.array(received_data).reshape(-1, 3)
             
-            
+            # TODO : Calculer les coordonnées dans la map en fonction de received_data
+            # ! Attention à bien scale les coordonnées. Par exemple si le max théorique pour une dimension est 100 et que la map a pas 100 cases, il faut normaliser les coordonnées entre 0 et 1 puis les multiplier par le nombre de cases de la map
+            self.map_elites.register_results(data, 15, 15, nb_of_moves)
             
             print("NB moves ", nb_of_moves)
             print("Positions \n", received_data)
 
         finally:
             connection.close()
+            self.map_elites.displayHeatmap()
         
     # TODO : change this function to work with mapElites
     # in the future, !be careful! with this function (! to avoid writing in the same memory space !)
@@ -194,5 +197,5 @@ class Master:
 if __name__ == "__main__":
     master = Master()
     # master.run_parallel(50) # ps ici les outputs sont mélangés, mais c'est normal (si vous voulez les voir dans l'ordre faite une boucle for avec master.run())
-    master.run()
+    master.run(auto=True)
     

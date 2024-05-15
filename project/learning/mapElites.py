@@ -1,5 +1,6 @@
 import numpy as np
 import pickle as pkl
+import matplotlib.pyplot as plt
 
 class Archive:
     def __init__(self, cols,rows,size):
@@ -14,7 +15,7 @@ class Archive:
             self.archive[x][y] = (individual,energy)
         else:
             _,prev_energy = self.archive[x][y]
-            if energy > prev_energy: # le critère conservé ici est l'énergie
+            if energy < prev_energy: # le critère conservé ici est l'énergie
                 self.archive[x][y] = (individual,energy)
     
     def get_random_individual(self,noise):
@@ -48,8 +49,14 @@ class MapElites:
         return newIndividual
     
     def displayHeatmap(self):
-        # à voir comment afficher la heatmap
-        pass
+        energy_map = np.zeros((self.archive.rows, self.archive.cols))
+        for i in range(self.archive.rows):
+            for j in range(self.archive.cols):
+                if self.archive.archive[i][j] is not None:
+                    _, energy = self.archive.archive[i][j]
+                    energy_map[i][j] = energy
+        plt.imshow(energy_map)
+        plt.savefig('heatmap.png')
 
     def export_to_file(self, filename):
         """Export the archive to a file using pickle."""

@@ -160,7 +160,6 @@ class Master:
             
             self.send_data(connection, str(data.size).encode(), "SIZE")
             self.send_data(connection, data, "WEIGHTS")
-            print(data)
             
             
             
@@ -177,6 +176,7 @@ class Master:
             received_data = received_data.split(" ")
             received_data = [int(x) for x in received_data if x != ""]
             received_data = np.array(received_data).reshape(-1, 3)
+            print(received_data)
             
             # TODO : Calculer les coordonnées dans la map en fonction de received_data
             # ! Attention à bien scale les coordonnées. Par exemple si le max théorique pour une dimension est 100 et que la map a pas 100 cases, il faut normaliser les coordonnées entre 0 et 1 puis les multiplier par le nombre de cases de la map
@@ -184,9 +184,18 @@ class Master:
             x_coord = 15 # à changer
             y_coord = 15 # à changer
             self.map_elites.register_results(data, x_coord, y_coord, nb_of_moves)
+
+
+            #Point de comparaison
+            level,number_robot_level = self.number_robot(received_data) #nombre par niveau
             
             print("NB moves ", nb_of_moves)
             print("Positions \n", received_data)
+            print("Level |", level)
+            print("Robot |", number_robot_level)
+            print("Number of robots on base :", number_robot_level[0])
+            print("Max height :", level[-1])
+
 
         finally:
             connection.close()
@@ -199,6 +208,27 @@ class Master:
         with concurrent.futures.ThreadPoolExecutor() as executor:
             for i in range(steps):
                 executor.submit(self.run)
+
+
+    #calculer le nombre de robots sur le tapis, z = 1
+    def number_robot(self, data_position):
+
+        level = []
+        number_robot = []
+        for i in range(len(data_position)):
+            if data_position[i][2] > len(level):
+                for j in range(len(level) + 1, data_position[i][2] + 1):
+                    level.append(j)
+                    number_robot.append(0)
+        
+            number_robot[data_position[i][2] - 1] += 1
+
+
+        print("fin level : ", level)
+        return level, number_robot
+    
+
+
             
 if __name__ == "__main__":
     master = Master()

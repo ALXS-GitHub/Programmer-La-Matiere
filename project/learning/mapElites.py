@@ -56,6 +56,9 @@ class MapElites:
                 if self.archive.archive[i][j] is not None:
                     _, energy = self.archive.archive[i][j]
                     energy_map[i][j] = energy
+        #add labels
+        plt.xlabel('levels')
+        plt.ylabel('y')
         plt.imshow(energy_map)
         plt.savefig('heatmap.png')
 

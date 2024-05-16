@@ -28,7 +28,7 @@ class Master:
         self.num_neurons_per_hidden_layer = 25
         self.num_inputs = 125
         self.num_outputs = 27
-        self.map_elites = MapElites({"size":self.num_inputs + self.num_outputs + self.num_hidden_layers*self.num_neurons_per_hidden_layer}, 30, 30, 0.1)
+        self.map_elites = MapElites({"size":self.num_inputs + self.num_outputs + self.num_hidden_layers*self.num_neurons_per_hidden_layer}, 100, 100, 0.1)
         self.map_elites.load_from_file("mapElites.pkl")
         
 
@@ -180,14 +180,14 @@ class Master:
             
             # TODO : Calculer les coordonnées dans la map en fonction de received_data
             # ! Attention à bien scale les coordonnées. Par exemple si le max théorique pour une dimension est 100 et que la map a pas 100 cases, il faut normaliser les coordonnées entre 0 et 1 puis les multiplier par le nombre de cases de la map
-
-            x_coord = 15 # à changer
-            y_coord = 15 # à changer
-            self.map_elites.register_results(data, x_coord, y_coord, nb_of_moves)
-
-
             #Point de comparaison
             level,number_robot_level = self.number_robot(received_data) #nombre par niveau
+            x_coord = max(level,100)-1
+            y_coord = max(number_robot_level,100)-1
+            self.map_elites.register_results(data, x_coord, y_coord, nb_of_moves)
+            print("Pushing neural network to mapElites at coordinates", x_coord, y_coord, "with nb of moves", nb_of_moves)
+
+
             
             print("NB moves ", nb_of_moves)
             print("Positions \n", received_data)

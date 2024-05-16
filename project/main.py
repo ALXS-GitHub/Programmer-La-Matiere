@@ -28,7 +28,7 @@ class Master:
         self.num_neurons_per_hidden_layer = 25
         self.num_inputs = 125
         self.num_outputs = 27
-        self.map_elites = MapElites({"size":self.num_inputs + self.num_outputs + self.num_hidden_layers*self.num_neurons_per_hidden_layer}, 100, 100, 0.1)
+        self.map_elites = MapElites({"size":self.num_inputs + self.num_outputs + self.num_hidden_layers*self.num_neurons_per_hidden_layer}, 15, 15, 0.1)
         self.map_elites.load_from_file("mapElites.pkl")
         
 
@@ -94,7 +94,7 @@ class Master:
             tag (str): The tag to check the ACK
         """
         connection.sendall(data)
-        connection.settimeout(5)
+        connection.settimeout(10)
         
         try:
             ack = connection.recv(1024).decode()
@@ -155,7 +155,7 @@ class Master:
             # TODO: ici, il faut lancer une itération d'entrainement, puis remplacer data par la matrice des poids du nouveau réseau à éval
             #data = self.generate_random_weights(2, 25, 125, 27, False)
             data = self.generate_weights()
-            # data = self.map_elites.get_custom_individual(15, 15) # sert à récupérer un individu spécifique dans la map
+            #data,_ = self.map_elites.get_custom_individual(1, 12) # sert à récupérer un individu spécifique dans la map
             # data = load_weights('logs/weights_error.log')
             
             self.send_data(connection, str(data.size).encode(), "SIZE")
@@ -176,18 +176,11 @@ class Master:
             received_data = received_data.split(" ")
             received_data = [int(x) for x in received_data if x != ""]
             received_data = np.array(received_data).reshape(-1, 3)
-            print(received_data)
             
             # TODO : Calculer les coordonnées dans la map en fonction de received_data
             # ! Attention à bien scale les coordonnées. Par exemple si le max théorique pour une dimension est 100 et que la map a pas 100 cases, il faut normaliser les coordonnées entre 0 et 1 puis les multiplier par le nombre de cases de la map
             #Point de comparaison
             level,number_robot_level = self.number_robot(received_data) #nombre par niveau
-            x_coord = max(level,100)-1
-            y_coord = max(number_robot_level,100)-1
-            self.map_elites.register_results(data, x_coord, y_coord, nb_of_moves)
-            print("Pushing neural network to mapElites at coordinates", x_coord, y_coord, "with nb of moves", nb_of_moves)
-
-
             
             print("NB moves ", nb_of_moves)
             print("Positions \n", received_data)
@@ -195,6 +188,11 @@ class Master:
             print("Robot |", number_robot_level)
             print("Number of robots on base :", number_robot_level[0])
             print("Max height :", level[-1])
+
+            x_coord = min(level[-1],15)
+            y_coord = min(number_robot_level[0],15)
+            self.map_elites.register_results(data, x_coord, y_coord, nb_of_moves)
+            print("Pushing neural network to mapElites at coordinates", x_coord, y_coord, "with nb of moves", nb_of_moves)
 
 
         finally:

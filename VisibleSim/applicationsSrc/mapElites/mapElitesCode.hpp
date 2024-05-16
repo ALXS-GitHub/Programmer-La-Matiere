@@ -42,7 +42,7 @@ private:
     P2PNetworkInterface *parent = nullptr;
     bool isMoving = false;
     int moveTo = 0;
-    int numberOfMoves = 12;
+    int numberOfMoves = 200;
     SocketClient client;
     NeuralNetwork nn = NeuralNetwork(125, 2, 25, 27); // create the neural network
     vector<vector<int>> NNMovesMapping = {

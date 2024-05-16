@@ -57,15 +57,16 @@ class MapElites:
                     _, energy = self.archive.archive[i][j]
                     energy_map[i][j] = energy
         #add labels
-        plt.xlabel('levels')
-        plt.ylabel('y')
+        plt.ylabel('max level reached')
+        plt.xlabel('Catoms on the ground')
+        #background color to white
         plt.imshow(energy_map)
         plt.savefig('heatmap.png')
 
     def export_to_file(self, filename):
         """Export the archive to a file using pickle."""
         with open(filename, 'wb') as f:
-            pkl.dump(self, f)
+            pkl.dump(self.archive, f)
     
     def load_from_file(self, filename):
         """Load the archive from a file using pickle."""
@@ -73,7 +74,7 @@ class MapElites:
             print("The file does not exist. Creating a new map.")
             return
         with open(filename, 'rb') as f:
-            self = pkl.load(f)
+            self.archive = pkl.load(f)
 
     def get_custom_individual(self, x, y):
         return self.archive.archive[x][y]

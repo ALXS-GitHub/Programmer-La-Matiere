@@ -154,8 +154,8 @@ class Master:
             # ? Matrice "jouet" pour tester la communication
             # TODO: ici, il faut lancer une itération d'entrainement, puis remplacer data par la matrice des poids du nouveau réseau à éval
             #data = self.generate_random_weights(2, 25, 125, 27, False)
-            data = self.generate_weights()
-            #data,_ = self.map_elites.get_custom_individual(1, 12) # sert à récupérer un individu spécifique dans la map
+            #data = self.generate_weights()
+            data,_ = self.map_elites.get_custom_individual(4, 6) # sert à récupérer un individu spécifique dans la map
             # data = load_weights('logs/weights_error.log')
             
             self.send_data(connection, str(data.size).encode(), "SIZE")
@@ -231,5 +231,5 @@ class Master:
 if __name__ == "__main__":
     master = Master()
     # master.run_parallel(50) # ps ici les outputs sont mélangés, mais c'est normal (si vous voulez les voir dans l'ordre faite une boucle for avec master.run())
-    master.run(auto=True)
+    master.run(auto=False)
     

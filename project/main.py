@@ -223,12 +223,7 @@ class Master:
         
             number_robot[data_position[i][2] - 1] += 1
 
-
-        print("fin level : ", level)
         return level, number_robot
-    
-
-
             
 if __name__ == "__main__":
     master = Master()

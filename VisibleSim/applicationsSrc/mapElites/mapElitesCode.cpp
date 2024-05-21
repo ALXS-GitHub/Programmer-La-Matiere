@@ -201,7 +201,7 @@ void mapElitesCode::onMotionEnd()
     numberOfMoves--;
     if (numberOfMoves > 0) { // do not move if we have reached the limit of moves
         // wait one second before moving again
-        scheduler->schedule(new InterruptionEvent<int>(scheduler->now() + 1000000, module, 1)); // time is in microseconds
+        scheduler->schedule(new InterruptionEvent<int>(scheduler->now() + 1, module, 1)); // time is in microseconds
     }
 }
 

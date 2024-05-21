@@ -33,6 +33,12 @@ class Master:
         if temp is not None:
             self.map_elites = temp
         
+    def unbind_socket(self):
+        """
+        Unbind the socket
+        """
+        self.server_socket.close()
+
 
     def load_weights(self, filename):
         """
@@ -226,7 +232,9 @@ class Master:
         return level, number_robot
             
 if __name__ == "__main__":
-    master = Master()
-    # master.run_parallel(50) # ps ici les outputs sont mélangés, mais c'est normal (si vous voulez les voir dans l'ordre faite une boucle for avec master.run())
-    master.run(auto=True)
+    for i in range(100):
+        master = Master()
+        # master.run_parallel(50) # ps ici les outputs sont mélangés, mais c'est normal (si vous voulez les voir dans l'ordre faite une boucle for avec master.run())
+        master.run(auto=True)
+        master.unbind_socket()
     

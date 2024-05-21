@@ -2,6 +2,7 @@ import numpy as np
 import pickle as pkl
 import matplotlib.pyplot as plt
 import os
+import random
 
 class Archive:
     def __init__(self, cols,rows,size):
@@ -19,13 +20,13 @@ class Archive:
             if energy < prev_energy: # le critère conservé ici est l'énergie
                 self.archive[x][y] = (individual,energy)
     
-    def get_random_individual(self,noise):
+    def get_random_individual(self, noise):
         x = np.random.randint(0, self.cols)
         y = np.random.randint(0, self.rows)
         while self.archive[x][y] is None:
             x = np.random.randint(0, self.cols)
             y = np.random.randint(0, self.rows)
-        individual = self.archive[x][y]
+        individual, _ = self.archive[x][y]  # extract the individual from the tuple
         noise = np.random.normal(0, noise, self.size)
         individual += noise
         return individual
@@ -37,6 +38,11 @@ class MapElites:
         self.noise = noise
         self.archive = Archive(cols=cols, rows=rows, size=self.size)
         self.individuals_added = 0
+        self.simulation_id = "MapElites-" + "".join([str(random.randint(0, 9)) for _ in range(5)])
+        #create folder if it does not exist
+        if not os.path.exists("results"):
+            os.makedirs("results")
+
     
     def register_results(self, individual, x, y, energy):
         self.archive.add(individual, x, y, energy)
@@ -61,12 +67,12 @@ class MapElites:
         plt.xlabel('Catoms on the ground')
         #background color to white
         plt.imshow(energy_map)
-        plt.savefig('heatmap.png')
+        plt.savefig(f"results/heatmap-{self.individuals_added}.png")
 
     def export_to_file(self, filename):
         """Export the archive to a file using pickle."""
         with open(filename, 'wb') as f:
-            pkl.dump(self.archive, f)
+            pkl.dump(self, f)
     
     def load_from_file(self, filename):
         """Load the archive from a file using pickle."""
@@ -74,7 +80,8 @@ class MapElites:
             print("The file does not exist. Creating a new map.")
             return
         with open(filename, 'rb') as f:
-            self.archive = pkl.load(f)
+            temp = pkl.load(f)
+            return temp
 
     def get_custom_individual(self, x, y):
         return self.archive.archive[x][y]

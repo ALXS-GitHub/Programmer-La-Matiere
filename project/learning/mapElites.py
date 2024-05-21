@@ -67,7 +67,8 @@ class MapElites:
         plt.xlabel('Catoms on the ground')
         #background color to white
         plt.imshow(energy_map)
-        plt.savefig(f"results/heatmap-{self.individuals_added}.png")
+        #plt.savefig(f"results/heatmap-{(self.individuals_added //10 +1)*10}.png")
+        plt.savefig("results/heatmap.png")
 
     def export_to_file(self, filename):
         """Export the archive to a file using pickle."""

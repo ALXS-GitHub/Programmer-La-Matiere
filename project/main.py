@@ -1,3 +1,4 @@
+import math
 import socket
 import numpy as np
 import time
@@ -155,7 +156,9 @@ class Master:
             # TODO: ici, il faut lancer une itération d'entrainement, puis remplacer data par la matrice des poids du nouveau réseau à éval
             #data = self.generate_random_weights(2, 25, 125, 27, False)
             #data = self.generate_weights()
-            data,_ = self.map_elites.get_custom_individual(4, 6) # sert à récupérer un individu spécifique dans la map
+            #data,_ = self.map_elites.get_custom_individual(4, 6) # sert à récupérer un individu spécifique dans la map
+            data = self.map_elites.get_next_individual()
+
             # data = load_weights('logs/weights_error.log')
             
             self.send_data(connection, str(data.size).encode(), "SIZE")
@@ -188,6 +191,8 @@ class Master:
             print("Robot |", number_robot_level)
             print("Number of robots on base :", number_robot_level[0])
             print("Max height :", level[-1])
+            print("Number of amas", len(self.amas_robot(received_data)))
+            print("Amas", self.amas_robot(received_data))
 
             x_coord = min(level[-1],15)
             y_coord = min(number_robot_level[0],15)
@@ -220,16 +225,56 @@ class Master:
                     number_robot.append(0)
         
             number_robot[data_position[i][2] - 1] += 1
-
-
-        print("fin level : ", level)
         return level, number_robot
     
 
+    def distance(self, robot1, robot2):
+        return math.sqrt((robot1[0] - robot2[0])**2 + (robot1[1] - robot2[1])**2 + (robot1[2] - robot2[2])**2)
 
+    def voisin(self, robot_base, data_position) :
+        for robot in data_position :
+            if(self.distance(robot_base,robot) > math.sqrt(2)) :
+                return False
+            elif(abs(robot_base[0] - robot[0]) > 1 | abs(robot_base[1] - robot[1]) > 1 | abs(robot_base[2] - robot[2]) > 1):
+                return False
+            elif(robot_base[2] == robot[2] & self.distance(robot_base,robot) > 1) :
+                return False
+            elif(robot_base[2] != robot[2] & (robot_base[0] > robot[0] | robot_base[1] > robot[1])) :
+                return False
+            else :
+                return True
+
+    def amas_robot(self, data_position):
+        data = data_position.copy()
+        amas = []
+        while(data) :
+            construction_amas = []
+            robots_proches = []
+
+            if(not construction_amas) :
+                construction_amas.append(data[0])
+                for robot in data :
+                    if(self.voisin(construction_amas[0],robot)) :
+                        robots_proches.append(robot)
+                        data.remove(robot)
+                data.pop(0)
+            else :
+                for robot_proche in robots_proches :
+                    for robot in data :
+                        if(self.voisin(robot_proche,robot)) :
+                            robots_proches.append(robot)
+                            data.remove(robot)
+                    construction_amas.append(robot_proche)
+                    robots_proches.remove(robot_proche)
+
+            amas.append(construction_amas)
+        return amas
             
+
+
+
 if __name__ == "__main__":
     master = Master()
     # master.run_parallel(50) # ps ici les outputs sont mélangés, mais c'est normal (si vous voulez les voir dans l'ordre faite une boucle for avec master.run())
-    master.run(auto=False)
+    master.run(auto=True)
     

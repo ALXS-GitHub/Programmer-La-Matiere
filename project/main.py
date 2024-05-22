@@ -29,9 +29,17 @@ class Master:
         self.num_neurons_per_hidden_layer = 25
         self.num_inputs = 125
         self.num_outputs = 27
-        self.map_elites = MapElites({"size":self.num_inputs + self.num_outputs + self.num_hidden_layers*self.num_neurons_per_hidden_layer}, 15, 15, 0.1)
-        self.map_elites.load_from_file("mapElites.pkl")
+        self.map_elites = MapElites({"size":self.num_inputs + self.num_outputs + self.num_hidden_layers*self.num_neurons_per_hidden_layer}, 80, 80, 0.8)
+        temp = self.map_elites.load_from_file("mapElites.pkl")
+        if temp is not None:
+            self.map_elites = temp
         
+    def unbind_socket(self):
+        """
+        Unbind the socket
+        """
+        self.server_socket.close()
+
 
     def load_weights(self, filename):
         """
@@ -95,7 +103,7 @@ class Master:
             tag (str): The tag to check the ACK
         """
         connection.sendall(data)
-        connection.settimeout(10)
+        connection.settimeout(60)
         
         try:
             ack = connection.recv(1024).decode()
@@ -159,6 +167,8 @@ class Master:
             #data,_ = self.map_elites.get_custom_individual(4, 6) # sert à récupérer un individu spécifique dans la map
             data = self.map_elites.get_next_individual()
 
+            data = self.generate_weights()
+            #data,_ = self.map_elites.get_custom_individual(4, 6) # sert à récupérer un individu spécifique dans la map
             # data = load_weights('logs/weights_error.log')
             
             self.send_data(connection, str(data.size).encode(), "SIZE")
@@ -196,8 +206,8 @@ class Master:
             print("Number of amas : ", len(amas))
 
 
-            x_coord = min(level[-1],15)
-            y_coord = min(number_robot_level[0],15)
+            x_coord = min(level[-1],80)
+            y_coord = min(number_robot_level[0],80)
             self.map_elites.register_results(data, x_coord, y_coord, nb_of_moves)
             print("Pushing neural network to mapElites at coordinates", x_coord, y_coord, "with nb of moves", nb_of_moves)
 
@@ -227,6 +237,9 @@ class Master:
                     number_robot.append(0)
         
             number_robot[data_position[i][2] - 1] += 1
+
+
+        print("fin level : ", level)
         return level, number_robot
     
 
@@ -280,7 +293,13 @@ class Master:
 
 
 if __name__ == "__main__":
-    master = Master()
-    # master.run_parallel(50) # ps ici les outputs sont mélangés, mais c'est normal (si vous voulez les voir dans l'ordre faite une boucle for avec master.run())
-    master.run(auto=True)
+    for i in range(10000):
+        try:
+            master = Master()
+            # master.run_parallel(50) # ps ici les outputs sont mélangés, mais c'est normal (si vous voulez les voir dans l'ordre faite une boucle for avec master.run())
+            master.run(auto=True)
+            master.unbind_socket()
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            master.unbind_socket()
     

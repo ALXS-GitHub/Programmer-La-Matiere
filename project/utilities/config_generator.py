@@ -13,7 +13,7 @@ def create_config_file(filename, x_basis, y_basis, n):
     render.set("grid", "on")
 
     world = ET.SubElement(root, "world")
-    world.set("gridSize", f"{x_basis},{y_basis},20")
+    world.set("gridSize", f"{x_basis},{y_basis},{n}")
 
     camera = ET.SubElement(world, "camera")
     camera.set("target", "80,30,10")
@@ -41,19 +41,25 @@ def create_config_file(filename, x_basis, y_basis, n):
 
     #ajout de n robots en couche supérieur ou égale à 1, disposés de manière aléatoire (attention à ne pas en mettre deux sur la même case)
     occupied_positions = []
+    current_z = 1
+    z_count = 0
     for i in range(0, n):
-        x = x_basis
-        y = y_basis
-        z = random.randint(1, 5)
+        x = x_basis - 1
+        y = y_basis - 1
+        z = current_z
         while (x, y, z) in occupied_positions:
             x = random.randint(0, x_basis -1)
             y = random.randint(0, y_basis -1)
-            z = random.randint(1, 5)
+            z = current_z
+        z_count += 1
         occupied_positions.append((x, y, z))
         block = ET.SubElement(blockList, "block")
         block.set("position", str(x)+","+str(y)+","+str(z))
         block.set("color", "blue")
         block.set("leader", "1")
+        if z_count == x_basis*y_basis:
+            current_z += 1
+            z_count = 0
 
 
     

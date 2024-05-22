@@ -184,6 +184,7 @@ class Master:
             # ! Attention à bien scale les coordonnées. Par exemple si le max théorique pour une dimension est 100 et que la map a pas 100 cases, il faut normaliser les coordonnées entre 0 et 1 puis les multiplier par le nombre de cases de la map
             #Point de comparaison
             level,number_robot_level = self.number_robot(received_data) #nombre par niveau
+            amas = self.amas_robot(received_data)
             
             print("NB moves ", nb_of_moves)
             print("Positions \n", received_data)
@@ -191,8 +192,9 @@ class Master:
             print("Robot |", number_robot_level)
             print("Number of robots on base :", number_robot_level[0])
             print("Max height :", level[-1])
-            print("Number of amas", len(self.amas_robot(received_data)))
-            print("Amas", self.amas_robot(received_data))
+            print("Amas : ", amas)
+            print("Number of amas : ", len(amas))
+
 
             x_coord = min(level[-1],15)
             y_coord = min(number_robot_level[0],15)
@@ -229,10 +231,13 @@ class Master:
     
 
     def distance(self, robot1, robot2):
+        print("robot",robot1, robot2)
         return math.sqrt((robot1[0] - robot2[0])**2 + (robot1[1] - robot2[1])**2 + (robot1[2] - robot2[2])**2)
 
     def voisin(self, robot_base, data_position) :
+        print("robot_base",robot_base)
         for robot in data_position :
+            print("robot",robot)
             if(self.distance(robot_base,robot) > math.sqrt(2)) :
                 return False
             elif(abs(robot_base[0] - robot[0]) > 1 | abs(robot_base[1] - robot[1]) > 1 | abs(robot_base[2] - robot[2]) > 1):
@@ -244,20 +249,21 @@ class Master:
             else :
                 return True
 
+
     def amas_robot(self, data_position):
         data = data_position.copy()
         amas = []
-        while(data) :
+        while(data.size !=0) :
             construction_amas = []
             robots_proches = []
 
             if(not construction_amas) :
                 construction_amas.append(data[0])
-                for robot in data :
+                for robot in data[1:] :
                     if(self.voisin(construction_amas[0],robot)) :
                         robots_proches.append(robot)
                         data.remove(robot)
-                data.pop(0)
+                data = np.delete(data,0,0)
             else :
                 for robot_proche in robots_proches :
                     for robot in data :

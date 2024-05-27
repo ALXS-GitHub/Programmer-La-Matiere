@@ -6,6 +6,7 @@ import subprocess
 import struct
 import concurrent.futures
 from learning.mapElites import MapElites
+import math
 
 
 # set the current working directory to the file's directory
@@ -28,11 +29,11 @@ class Master:
         self.num_neurons_per_hidden_layer = 25
         self.num_inputs = 125
         self.num_outputs = 27
-        self.map_elites = MapElites({"size":self.num_inputs + self.num_outputs + self.num_hidden_layers*self.num_neurons_per_hidden_layer}, 80, 80, 0.8)
+        self.map_elites = MapElites({"size":self.num_inputs + self.num_outputs + self.num_hidden_layers*self.num_neurons_per_hidden_layer}, 80, 80, 1.5)
         temp = self.map_elites.load_from_file("mapElites.pkl")
         if temp is not None:
             self.map_elites = temp
-        
+        self.map_elites.set_noise(10)
     def unbind_socket(self):
         """
         Unbind the socket
@@ -189,6 +190,7 @@ class Master:
             # ! Attention à bien scale les coordonnées. Par exemple si le max théorique pour une dimension est 100 et que la map a pas 100 cases, il faut normaliser les coordonnées entre 0 et 1 puis les multiplier par le nombre de cases de la map
             #Point de comparaison
             level,number_robot_level = self.number_robot(received_data) #nombre par niveau
+            nb_amas = len(self.amas_robot(received_data))
             
             print("NB moves ", nb_of_moves)
             print("Positions \n", received_data)
@@ -196,9 +198,9 @@ class Master:
             print("Robot |", number_robot_level)
             print("Number of robots on base :", number_robot_level[0])
             print("Max height :", level[-1])
-
-            x_coord = min(level[-1],80)
-            y_coord = min(number_robot_level[0],80)
+            print("Amas de robots : ", nb_amas)
+            x_coord = min(level[-1],80)-1
+            y_coord = min(nb_amas,80)-1
             self.map_elites.register_results(data, x_coord, y_coord, nb_of_moves)
             print("Pushing neural network to mapElites at coordinates", x_coord, y_coord, "with nb of moves", nb_of_moves)
 
@@ -230,12 +232,35 @@ class Master:
             number_robot[data_position[i][2] - 1] += 1
 
         return level, number_robot
-            
+
+    def distance(self, robot1, robot2):
+        return math.sqrt((robot1[0] - robot2[0])**2 + (robot1[1] - robot2[1])**2 + (robot1[2] - robot2[2])**2)
+
+    def voisin(self, r1, r2) :
+        return self.distance(r1,r2) <= 1
+
+    def amas_robot(self, data_position):
+        data = data_position.copy()
+        amas = []
+        while len(data) > 0:
+            amas.append([data[0]])
+            data = data[1:]
+            i = 0
+            while i < len(amas[-1]):
+                j = 0
+                while j < len(data):
+                    if self.voisin(amas[-1][i], data[j]):
+                        amas[-1].append(data[j])
+                        data = np.delete(data, j, axis=0)
+                    else:
+                        j += 1
+                i += 1
+        return amas
 if __name__ == "__main__":
     for i in range(10000):
         try:
             master = Master()
-            # master.run_parallel(50) # ps ici les outputs sont mélangés, mais c'est normal (si vous voulez les voir dans l'ordre faite une boucle for avec master.run())
+            #master.run_parallel(50) # ps ici les outputs sont mélangés, mais c'est normal (si vous voulez les voir dans l'ordre faite une boucle for avec master.run())
             master.run(auto=True)
             master.unbind_socket()
         except Exception as e:

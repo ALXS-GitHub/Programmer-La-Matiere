@@ -13,13 +13,13 @@ class Archive:
         self.archive = np.array(self.archive)
     
     def add(self, individual, x, y, energy):
+        energy = int(energy)
         if self.archive[x][y] is None:
             self.archive[x][y] = (individual,energy)
         else:
             _,prev_energy = self.archive[x][y]
-            if energy < prev_energy: # le critère conservé ici est l'énergie
+            if energy > prev_energy: # le critère conservé ici est l'énergie
                 self.archive[x][y] = (individual,energy)
-    
     def get_random_individual(self, noise):
         x = np.random.randint(0, self.cols)
         y = np.random.randint(0, self.rows)
@@ -43,6 +43,8 @@ class MapElites:
         if not os.path.exists("results"):
             os.makedirs("results")
 
+    def set_noise(self, noise):
+        self.noise = noise
     
     def register_results(self, individual, x, y, energy):
         self.archive.add(individual, x, y, energy)
@@ -61,14 +63,21 @@ class MapElites:
             for j in range(self.archive.cols):
                 if self.archive.archive[i][j] is not None:
                     _, energy = self.archive.archive[i][j]
+                    energy = int(energy)
                     energy_map[i][j] = energy
         #add labels
         plt.ylabel('max level reached')
-        plt.xlabel('Catoms on the ground')
+        plt.xlabel('Number of Clusters')
         #background color to white
         plt.imshow(energy_map)
-        #plt.savefig(f"results/heatmap-{(self.individuals_added //10 +1)*10}.png")
-        plt.savefig("results/heatmap.png")
+        plt.clim(0,10000)
+        #show energy scale
+        plt.colorbar()
+
+        plt.savefig(f"results/heatmap-{self.individuals_added}.png")
+        #plt.savefig("results/heatmap.png")
+        #clear the plot
+        plt.clf()
 
     def export_to_file(self, filename):
         """Export the archive to a file using pickle."""

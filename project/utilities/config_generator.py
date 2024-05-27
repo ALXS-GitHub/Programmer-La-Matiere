@@ -69,4 +69,4 @@ def create_config_file(filename, x_basis, y_basis, n):
 
 
 if __name__ == "__main__":
-    create_config_file("config.xml", 20, 20, 80)
+    create_config_file("config.xml", 10, 8, 80)
